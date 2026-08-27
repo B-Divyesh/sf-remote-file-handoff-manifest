@@ -1,0 +1,39 @@
+[package]
+name = "remote-file-handoff-manifest"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Create and verify signed, transport-independent folder manifests"
+license = "MIT"
+repository = "https://github.com/B-Divyesh/sf-remote-file-handoff-manifest"
+readme = "README.md"
+keywords = ["manifest", "checksum", "handoff", "cli"]
+categories = ["command-line-utilities", "cryptography"]
+
+[[bin]]
+name = "handoff"
+path = "src/main.rs"
+
+[dependencies]
+age = "0.11"
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+clap = { version = "4.5", features = ["derive"] }
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+walkdir = "2"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
