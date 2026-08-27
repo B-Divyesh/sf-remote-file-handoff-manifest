@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://remote-file-handoff-manifest.sociobot.in/sitemap.xml
