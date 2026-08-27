@@ -1,0 +1,11 @@
+{
+  "slug": "remote-file-handoff-manifest",
+  "title": "Remote File Handoff Manifest",
+  "territory": "utilities",
+  "user": "A freelancer or small team sending a private folder through a NAS, SFTP, or peer-to-peer link who needs a recipient-verifiable inventory instead of an ambiguous 'uploaded' message.",
+  "smallest_useful_product": "CLI that builds a signed JSON/HTML manifest with relative paths, sizes, hashes, optional expiry/contact fields, and a recipient-side verifier; optional SFTP/NAS upload only copies the package.",
+  "success_measure": "When one file is missing or altered in a 10,000-file fixture, recipient verification identifies the exact path and no unchanged file is reported as bad.",
+  "artifact_class": "cli",
+  "monetization": "free",
+  "constraints": "Hash filenames can reveal private information, so offer encrypted/opaque manifests; use standard cryptographic libraries; never advertise delivery guarantees when transport is external."
+}
