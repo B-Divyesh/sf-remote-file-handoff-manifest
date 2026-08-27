@@ -35,7 +35,7 @@ fn documented_round_trip_and_exact_mismatch() {
         .success();
 
     copy_dir(&source, &received);
-    let public = temp.path().join("sender.key.pub");
+    let public = temp.path().join("sender.pub");
     handoff()
         .arg("verify")
         .arg(receipt.join("manifest.json"))
@@ -93,7 +93,7 @@ fn empty_folder_and_encrypted_receipt_work() {
         .arg(receipt.join("manifest.json.age"))
         .arg(&source)
         .args(["--public-key"])
-        .arg(temp.path().join("sender.key.pub"))
+        .arg(temp.path().join("sender.pub"))
         .assert()
         .success()
         .stdout(predicate::str::contains("0 files"));
@@ -133,7 +133,7 @@ fn ten_thousand_files_reports_only_the_changed_path() {
         .arg(receipt.join("manifest.json"))
         .arg(&source)
         .args(["--public-key"])
-        .arg(temp.path().join("sender.key.pub"))
+        .arg(temp.path().join("sender.pub"))
         .assert()
         .code(3)
         .get_output()
@@ -143,6 +143,47 @@ fn ten_thousand_files_reports_only_the_changed_path() {
     assert_eq!(report["altered"], serde_json::json!(["item-04217.txt"]));
     assert_eq!(report["missing"], serde_json::json!([]));
     assert_eq!(report["unexpected"], serde_json::json!([]));
+}
+
+#[test]
+fn package_copies_files_and_receipts_without_overwriting() {
+    let temp = tempdir().unwrap();
+    let source = temp.path().join("source");
+    let key = temp.path().join("sender.key");
+    let receipt = temp.path().join("receipt");
+    let package = temp.path().join("package");
+    fs::create_dir(&source).unwrap();
+    fs::write(source.join("final.txt"), "approved\n").unwrap();
+    handoff()
+        .args(["keygen", "-o"])
+        .arg(&key)
+        .assert()
+        .success();
+    handoff()
+        .arg("create")
+        .arg(&source)
+        .args(["-k"])
+        .arg(&key)
+        .args(["-o"])
+        .arg(&receipt)
+        .assert()
+        .success();
+    handoff()
+        .arg("package")
+        .arg(&source)
+        .args(["-m"])
+        .arg(receipt.join("manifest.json"))
+        .args(["-o"])
+        .arg(&package)
+        .assert()
+        .success();
+    assert_eq!(
+        fs::read_to_string(package.join("files/final.txt")).unwrap(),
+        "approved\n"
+    );
+    assert!(package.join("manifest.json").is_file());
+    assert!(package.join("manifest.html").is_file());
+    assert!(package.join("signer.pub").is_file());
 }
 
 fn copy_dir(source: &std::path::Path, target: &std::path::Path) {

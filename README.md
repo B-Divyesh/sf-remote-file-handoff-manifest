@@ -6,7 +6,7 @@ It is for freelancers and small teams handing private folders over NAS mounts, S
 
 ## Install
 
-Build the single binary with Rust 1.80 or newer:
+Build the single binary with Rust 1.85 or newer:
 
 ```sh
 cargo install --path .

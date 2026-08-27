@@ -24,7 +24,7 @@ struct Cli {
 enum Command {
     /// Generate a new Ed25519 signing identity.
     Keygen {
-        /// Secret-key path. The matching public key is written with a .pub suffix.
+        /// Secret-key path. The matching public key uses the same stem and a .pub extension.
         #[arg(long, short)]
         output: PathBuf,
     },
@@ -145,8 +145,15 @@ fn run(cli: &Cli) -> Result<(serde_json::Value, String, u8), (Error, u8)> {
             public_key,
             ignore_expiry,
         } => {
-            let report = verify_manifest(manifest, source, public_key, *ignore_expiry)
-                .map_err(|error| (error, 4))?;
+            let report =
+                verify_manifest(manifest, source, public_key, *ignore_expiry).map_err(|error| {
+                    let code = if matches!(error, Error::Io(_) | Error::Walk(_)) {
+                        1
+                    } else {
+                        4
+                    };
+                    (error, code)
+                })?;
             let code = if report.clean() { 0 } else { 3 };
             let human = if report.clean() {
                 format!(

@@ -2,13 +2,14 @@
 name = "remote-file-handoff-manifest"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.85"
 description = "Create and verify signed, transport-independent folder manifests"
 license = "MIT"
 repository = "https://github.com/B-Divyesh/sf-remote-file-handoff-manifest"
 readme = "README.md"
 keywords = ["manifest", "checksum", "handoff", "cli"]
 categories = ["command-line-utilities", "cryptography"]
+include = ["/src/**", "/tests/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/CHANGELOG.md"]
 
 [[bin]]
 name = "handoff"

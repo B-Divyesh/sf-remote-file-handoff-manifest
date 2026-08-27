@@ -1,3 +1,33 @@
+//! Build and verify signed folder inventories.
+//!
+//! The CLI is the primary interface. The same small typed API is available to
+//! Rust callers:
+//!
+//! ```no_run
+//! use remote_file_handoff_manifest::{keygen, create_manifest, verify_manifest};
+//! use std::path::Path;
+//!
+//! keygen(Path::new("sender.key"))?;
+//! create_manifest(
+//!     Path::new("deliverables"),
+//!     Path::new("sender.key"),
+//!     Path::new("receipt"),
+//!     None,
+//!     None,
+//!     false,
+//! )?;
+//! let result = verify_manifest(
+//!     Path::new("receipt/manifest.json"),
+//!     Path::new("deliverables"),
+//!     Path::new("sender.pub"),
+//!     false,
+//! )?;
+//! assert!(result.clean());
+//! # Ok::<(), remote_file_handoff_manifest::Error>(())
+//! ```
+
+#![forbid(unsafe_code)]
+
 use age::secrecy::SecretString;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Utc};
@@ -116,6 +146,11 @@ pub fn keygen(output: &Path) -> Result<KeygenReport> {
         )));
     }
     let public_path = public_key_path(output);
+    if public_path == output {
+        return Err(Error::Message(
+            "secret-key output must not use the .pub extension".into(),
+        ));
+    }
     if public_path.exists() {
         return Err(Error::Message(format!(
             "refusing to overwrite existing public key: {}",
@@ -148,6 +183,7 @@ pub fn create_manifest(
     encrypt: bool,
 ) -> Result<CreateReport> {
     ensure_directory(source, "source")?;
+    ensure_output_outside_source(source, output, "receipt")?;
     if let Some(value) = &expires {
         DateTime::parse_from_rfc3339(value).map_err(|_| {
             Error::Message("--expires must be RFC 3339, for example 2026-12-31T23:59:59Z".into())
@@ -185,18 +221,21 @@ pub fn create_manifest(
         let passphrase = passphrase()?;
         let json_path = output.join("manifest.json.age");
         let html_path = output.join("manifest.html.age");
-        refuse_overwrite(&[&json_path, &html_path])?;
+        let readme_path = output.join("README.txt");
+        let signer_path = output.join("signer.pub");
+        refuse_overwrite(&[&json_path, &html_path, &readme_path, &signer_path])?;
         write_new(&json_path, &encrypt_bytes(&json, &passphrase)?)?;
         write_new(&html_path, &encrypt_bytes(html.as_bytes(), &passphrase)?)?;
         write_new(
-            &output.join("README.txt"),
+            &readme_path,
             b"Encrypted Remote File Handoff Manifest\n\nUse `handoff verify manifest.json.age FILES --public-key SENDER.pub`.\nThe passphrase and public-key fingerprint should arrive through a trusted channel.\n",
         )?;
         (json_path, html_path)
     } else {
         let json_path = output.join("manifest.json");
         let html_path = output.join("manifest.html");
-        refuse_overwrite(&[&json_path, &html_path])?;
+        let signer_path = output.join("signer.pub");
+        refuse_overwrite(&[&json_path, &html_path, &signer_path])?;
         write_new(&json_path, &json)?;
         write_new(&html_path, html.as_bytes())?;
         (json_path, html_path)
@@ -313,18 +352,24 @@ pub fn package(source: &Path, manifest: &Path, output: &Path) -> Result<PackageR
             output.display()
         )));
     }
-    let source_canonical = source.canonicalize()?;
-    if let Some(parent) = output.parent().filter(|path| path.exists()) {
-        if output
-            .canonicalize()
-            .unwrap_or_else(|_| output.to_path_buf())
-            .starts_with(&source_canonical)
-            || parent.canonicalize()?.starts_with(&source_canonical)
-        {
-            return Err(Error::Message(
-                "package destination must not be inside the source folder".into(),
-            ));
-        }
+    ensure_output_outside_source(source, output, "package")?;
+    let receipt_dir = manifest.parent().unwrap_or(Path::new("."));
+    let signer_path = receipt_dir.join("signer.pub");
+    if !signer_path.is_file() {
+        return Err(Error::Message(format!(
+            "receipt is missing its signer.pub file: {}",
+            signer_path.display()
+        )));
+    }
+    let verification = verify_manifest(manifest, source, &signer_path, false)?;
+    if !verification.clean() {
+        return Err(Error::Message(format!(
+            "source does not match the receipt ({} missing, {} altered, {} unexpected, expired: {})",
+            verification.missing.len(),
+            verification.altered.len(),
+            verification.unexpected.len(),
+            verification.expired
+        )));
     }
     let files_root = output.join("files");
     fs::create_dir_all(&files_root)?;
@@ -366,7 +411,7 @@ pub fn package(source: &Path, manifest: &Path, output: &Path) -> Result<PackageR
         "signer.pub",
         "README.txt",
     ] {
-        let candidate = manifest.parent().unwrap_or(Path::new(".")).join(sibling);
+        let candidate = receipt_dir.join(sibling);
         if candidate.is_file() {
             fs::copy(&candidate, output.join(sibling))?;
         }
@@ -500,10 +545,38 @@ fn ensure_directory(path: &Path, label: &str) -> Result<()> {
     Ok(())
 }
 
+fn ensure_output_outside_source(source: &Path, output: &Path, label: &str) -> Result<()> {
+    let source = source.canonicalize()?;
+    let absolute = if output.is_absolute() {
+        output.to_path_buf()
+    } else {
+        std::env::current_dir()?.join(output)
+    };
+    let mut existing = absolute.as_path();
+    let mut tail = Vec::new();
+    while !existing.exists() {
+        let name = existing
+            .file_name()
+            .ok_or_else(|| Error::Message(format!("invalid {label} output path")))?;
+        tail.push(name.to_os_string());
+        existing = existing
+            .parent()
+            .ok_or_else(|| Error::Message(format!("invalid {label} output path")))?;
+    }
+    let mut resolved = existing.canonicalize()?;
+    for part in tail.iter().rev() {
+        resolved.push(part);
+    }
+    if resolved.starts_with(source) {
+        return Err(Error::Message(format!(
+            "{label} destination must not be inside the source folder"
+        )));
+    }
+    Ok(())
+}
+
 fn public_key_path(secret: &Path) -> PathBuf {
-    let mut value = secret.as_os_str().to_owned();
-    value.push(".pub");
-    PathBuf::from(value)
+    secret.with_extension("pub")
 }
 
 fn encode_public_key(key: &VerifyingKey) -> String {
@@ -597,7 +670,9 @@ fn decrypt_bytes(ciphertext: &[u8], passphrase: &SecretString) -> Result<Vec<u8>
         .decrypt(std::iter::once(&identity as &dyn age::Identity))
         .map_err(|_| Error::Message("could not decrypt manifest; check RFHM_PASSPHRASE".into()))?;
     let mut plaintext = Vec::new();
-    reader.read_to_end(&mut plaintext)?;
+    reader
+        .read_to_end(&mut plaintext)
+        .map_err(|_| Error::Message("could not decrypt manifest; check RFHM_PASSPHRASE".into()))?;
     Ok(plaintext)
 }
 
