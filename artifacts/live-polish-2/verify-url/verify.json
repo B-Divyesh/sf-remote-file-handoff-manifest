@@ -1,0 +1,14 @@
+{
+  "url": "https://remote-file-handoff-manifest.sociobot.in",
+  "loadMs": 980,
+  "errors": [],
+  "a11y": {
+    "title": "Remote File Handoff Manifest — verify every file",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 2540
+  }
+}

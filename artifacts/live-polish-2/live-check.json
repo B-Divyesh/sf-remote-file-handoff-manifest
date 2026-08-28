@@ -1,0 +1,75 @@
+{
+  "base": "https://remote-file-handoff-manifest.sociobot.in",
+  "checkedAt": "2026-08-28T12:09:35.764Z",
+  "routes": {
+    "/": {
+      "status": 200,
+      "title": "Remote File Handoff Manifest — verify every file",
+      "axeSeriousCritical": 0
+    },
+    "/demo/": {
+      "status": 200,
+      "title": "Demo — Remote File Handoff Manifest",
+      "axeSeriousCritical": 0
+    },
+    "/privacy/": {
+      "status": 200,
+      "title": "Privacy — Remote File Handoff Manifest",
+      "axeSeriousCritical": 0
+    },
+    "/terms/": {
+      "status": 200,
+      "title": "Terms — Remote File Handoff Manifest",
+      "axeSeriousCritical": 0
+    },
+    "/missing-polish-2": {
+      "status": 404,
+      "title": "Page not found — Remote File Handoff Manifest",
+      "axeSeriousCritical": 0
+    }
+  },
+  "links": [
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/#main",
+      "status": 200
+    },
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/",
+      "status": 200
+    },
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/demo/",
+      "status": 200
+    },
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/#how",
+      "status": 200
+    },
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/privacy/",
+      "status": 200
+    },
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/?demo=1",
+      "status": 200
+    },
+    {
+      "href": "https://github.com/B-Divyesh/sf-remote-file-handoff-manifest#encrypt-file-names",
+      "status": 200
+    },
+    {
+      "href": "https://remote-file-handoff-manifest.sociobot.in/terms/",
+      "status": 200
+    },
+    {
+      "href": "https://github.com/B-Divyesh/sf-remote-file-handoff-manifest",
+      "status": 200
+    },
+    {
+      "href": "https://sociobot.in/",
+      "status": 200
+    }
+  ],
+  "consoleErrors": [],
+  "offlineDemo": true
+}
