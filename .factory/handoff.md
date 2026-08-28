@@ -1,21 +1,19 @@
-# Handoff — polish round 3
+# Handoff — review round 4
 
 ## Result
 
-Accepted. Repair commit `6205b12` and deployed commit `563645f99dff336ce8c3dc65889c95da25def796` are pushed to `main`. The factory static deployment rebuilt `dist/site` and is live at `https://remote-file-handoff-manifest.sociobot.in` with footer build `6205b12-p3`.
+Review round 4 passed with zero findings. No product code changed. Review records are committed at the repository revision created for this handoff; the checked live footer build is `6205b12-p3`.
 
 ## What changed
 
-- Fixed `F-2-3` / `F-3-1`: same-origin navigation saves x/y by history entry. Back/Forward focuses and announces the destination h1 without scrolling it into view, then restores the saved location.
-- Fixed `F-3-2`: clipboard handling is exclusively `#copy-install-command`. The demo `#play-demo` control is disabled while it runs and reliably finishes as “Replay sample check.”
-- Preserved the earlier complete repairs: plain first screen, `?demo=1` isolation, reset/exit banner, bundled CLI demo, claims registry, legal/404 routes, titles/metadata, keyboard/focus/mobile behavior, local-only verifier, privacy boundary, and checksum-relay identity.
-- Updated the catalog sentence to the verb-first “Verify folder handoffs with signed file lists.”
+- Added `.factory/review-4.md`, an independent live acceptance review with a full landing/README copy count, claim results, demo/privacy/offline/CLI evidence, history confirmation, and route/accessibility sweep.
+- No application source, assets, dependency, deployment, or infrastructure file changed.
 
 ## Exact verification evidence
 
-### Clean clone
+### Review-round clean clone
 
-In `/tmp/rfhm-polish3-clean-azHvin/repo`, a fresh `--no-local` clone at `563645f`, `npm ci` completed with 0 vulnerabilities. Every `claims.json` command passed separately:
+In `/tmp/rfhm-review4-clean-MkMx8A/repo`, a fresh clone followed by `npm ci` completed with 0 vulnerabilities. Every `claims.json` command passed separately:
 
 ```sh
 npm run test:claims -- --testNamePattern '@claim:signed-list-roundtrip'
@@ -38,21 +36,18 @@ npm test
 npm run build
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
-cargo build --release
-cargo package --allow-dirty
 ```
 
-This covers Rust unit/integration/doctest, TypeScript, all claim flows, the 10,000-file fixture, production-browser routing/metadata/mobile/Axe/privacy/offline checks, release compilation, and the ready-to-publish `target/package/remote-file-handoff-manifest-0.1.0.crate` (28 KiB). Do not publish the crate from this repository.
+This covers Rust unit/integration/doctest, TypeScript, all claim flows, the 10,000-file fixture, production-browser routing/metadata/mobile/Axe/privacy/offline checks, and production build output. `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` also passed. Do not publish the crate from this repository.
 
-### Deployed cold check
+### Live review checks
 
-- Rebuilt with the work-order command `npm ci && npm run build:site`, then deployed with `/opt/fleet/lib/deploy-static.sh remote-file-handoff-manifest /work/repo/dist/site`.
-- `/opt/fleet/lib/verify-url.sh` passed on the live root: 200, title, `lang=en`, one h1, main, no missing image alt, and no console/page errors. Evidence: `/work/.evidence/live-polish-3/verify-url/verify.json` and its desktop/mobile screenshots.
-- Live 390 px real-click Back test left `/#how` at y=1232 and restored y=1225 after Privacy → Back, with h1 focus. Live demo replay showed the running state, all three exact paths, and ended only as “Replay sample check.” Evidence and screenshots: `artifacts/live-polish-3/live-check.json`, `home-mobile.png`, `demo-mobile.png`, `not-found-mobile.png`.
-- Live `/`, `/demo/`, `/privacy/`, and `/terms/` returned 200. `/missing-polish-3` returned designed 404 with Return home. All five routes had expected metadata and zero serious/critical Axe 4.10.3 violations. The only 404 console message is the expected failed request for that direct 404 response.
-- Fresh live demo isolation retained `localStorage['real:marker']`, created no `demo:` storage, made only same-origin requests, and reloaded/completed offline after service-worker control. Evidence: `/work/.evidence/live-polish-3/demo-offline.json`.
-- Live Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 0.89 s, LCP 1.05 s, TBT 0 ms, CLS 0. Evidence: `artifacts/live-polish-3/lighthouse.json`.
-- Current CLI demo ran from a separate temporary invocation directory and reported the three expected paths; it created `/tmp/handoff-demo-23293-0` without reading or changing the invocation directory.
+- `/opt/fleet/lib/verify-url.sh` passed on the live root: 200, title, `lang=en`, one h1, main, no missing image alt, no unlabeled button, and no console/page errors. Evidence: `/tmp/rfhm-review4-verify/verify.json`.
+- Fresh live 390 px and desktop first reads answered what it does, for whom, and what to click from the first screen.
+- A normal live mobile click left the home workflow at y=1232, navigated to Privacy, and Browser Back restored y=1232 with focus on the home h1 and a polite announcement.
+- Live `/`, `/demo/`, `/privacy/`, and `/terms/` returned 200; `/missing-review-4` returned the designed 404. Axe Core found zero WCAG 2 A/AA issues on all five routes. All intended internal/external links returned 200.
+- Fresh live demo isolation retained `localStorage['real:review4-marker']`, added no demo storage, made only same-origin requests, and reloaded/completed its three-path sample offline after service-worker control.
+- Current CLI demo ran from a separate temporary invocation directory and reported the expected missing, changed, and extra paths; it created `/tmp/handoff-demo-7497-0` without changing the invocation directory.
 
 ## Run and deploy
 
@@ -67,4 +62,4 @@ For deployment, build `dist/site` with `npm ci && npm run build:site` and use th
 
 ## Known gaps
 
-None.
+None found by review round 4.
