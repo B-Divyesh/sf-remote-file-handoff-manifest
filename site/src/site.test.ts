@@ -36,4 +36,15 @@ describe("page accessibility shell", () => {
     expect(readme).toMatch(/File and system errors exit `1`/);
     expect(readme).not.toMatch(/CLI demo|command-line binary|machine-readable|Operational failures/);
   });
+
+  it("keeps replay and clipboard actions isolated", () => {
+    const home = readFileSync(resolve("site/index.html"), "utf8");
+    const demo = readFileSync(resolve("site/demo/index.html"), "utf8");
+    const script = readFileSync(resolve("site/src/main.ts"), "utf8");
+
+    expect(home).toMatch(/id="copy-install-command"/);
+    expect(demo).toMatch(/id="play-demo"/);
+    expect(script).toMatch(/querySelector<HTMLButtonElement>\("#copy-install-command"\)/);
+    expect(script).not.toMatch(/querySelector<HTMLButtonElement>\("\.copy-button"\)/);
+  });
 });

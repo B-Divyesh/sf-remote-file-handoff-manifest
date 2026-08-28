@@ -17,7 +17,7 @@ const offlineNote = document.querySelector<HTMLElement>("#offline-note");
 
 folderInput?.setAttribute("webkitdirectory", "");
 
-document.querySelector<HTMLButtonElement>(".copy-button")?.addEventListener("click", async (event) => {
+document.querySelector<HTMLButtonElement>("#copy-install-command")?.addEventListener("click", async (event) => {
   const button = event.currentTarget as HTMLButtonElement;
   const copy = button.dataset.copy ?? "";
   try {
@@ -133,7 +133,12 @@ function resetAndRunDemo(): void {
   demoTimers = [];
   const recording = document.querySelector<HTMLElement>("#demo-recording");
   const demoPanel = document.querySelector<HTMLElement>("#demo-result");
+  const play = document.querySelector<HTMLButtonElement>("#play-demo");
   if (!recording || !demoPanel) return;
+  if (play) {
+    play.disabled = true;
+    play.textContent = "Running sample check…";
+  }
   recording.replaceChildren(makeRecordingLine("$ handoff demo", "command"));
   demoPanel.dataset.state = "loading";
   demoPanel.querySelector(".result-kicker")!.textContent = "CHECKING // BUNDLED FILES";
@@ -170,8 +175,10 @@ function resetAndRunDemo(): void {
       }
       details.replaceChildren(list);
     }
-    const play = document.querySelector<HTMLButtonElement>("#play-demo");
-    if (play) play.textContent = "Replay sample check";
+    if (play) {
+      play.disabled = false;
+      play.textContent = "Replay sample check";
+    }
   }, reduced ? 10 : 1450));
 }
 
@@ -186,12 +193,68 @@ document.querySelector("#play-demo")?.addEventListener("click", resetAndRunDemo)
 document.querySelector("#reset-demo")?.addEventListener("click", resetAndRunDemo);
 if (document.body.dataset.page === "demo") resetAndRunDemo();
 
-window.addEventListener("pagehide", () => sessionStorage.setItem("handoff:focus-route", "1"));
+const historyEntryField = "handoffEntry";
+const historyEntry = (() => {
+  const state = history.state && typeof history.state === "object" ? history.state as Record<string, unknown> : {};
+  const existing = state[historyEntryField];
+  if (typeof existing === "string") return existing;
+  const created = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  history.replaceState({ ...state, [historyEntryField]: created }, "");
+  return created;
+})();
+
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+function saveScrollPosition(): void {
+  try {
+    sessionStorage.setItem(`handoff:scroll:${historyEntry}`, JSON.stringify({ x: window.scrollX, y: window.scrollY }));
+  } catch {
+    // Navigation still works when storage is disabled.
+  }
+}
+
+function restoreScrollPosition(): void {
+  let saved: { x: number; y: number } | undefined;
+  try {
+    const raw = sessionStorage.getItem(`handoff:scroll:${historyEntry}`);
+    if (raw) saved = JSON.parse(raw) as { x: number; y: number };
+  } catch {
+    return;
+  }
+  if (!saved || !Number.isFinite(saved.x) || !Number.isFinite(saved.y)) return;
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(saved!.x, saved!.y)));
+}
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const link = event.target.closest<HTMLAnchorElement>("a[href]");
+  if (!link || link.target || link.hasAttribute("download")) return;
+  const destination = new URL(link.href, location.href);
+  if (destination.origin !== location.origin) return;
+  if (destination.pathname === location.pathname && destination.search === location.search) return;
+  saveScrollPosition();
+}, { capture: true });
+
+window.addEventListener("pagehide", () => {
+  saveScrollPosition();
+  try {
+    sessionStorage.setItem("handoff:focus-route", "1");
+  } catch {
+    // Focus restoration is an enhancement when storage is available.
+  }
+});
 window.addEventListener("pageshow", () => {
-  if (sessionStorage.getItem("handoff:focus-route") !== "1") return;
-  sessionStorage.removeItem("handoff:focus-route");
+  let shouldFocus = false;
+  try {
+    shouldFocus = sessionStorage.getItem("handoff:focus-route") === "1";
+    sessionStorage.removeItem("handoff:focus-route");
+  } catch {
+    // Direct loads keep their normal focus when storage is disabled.
+  }
+  if (!shouldFocus) return;
   const heading = document.querySelector<HTMLElement>("main h1");
   heading?.focus({ preventScroll: true });
   const status = document.querySelector<HTMLElement>("#route-status");
   if (status && heading) status.textContent = heading.textContent ?? document.title;
+  restoreScrollPosition();
 });

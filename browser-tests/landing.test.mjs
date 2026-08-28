@@ -113,6 +113,11 @@ test("demo direct links, reset, navigation focus, back focus, and not-found rout
       assert.equal(intersectsViewport, true, `${selector} should be visible without scrolling`);
     }
     await page.screenshot({ path: join(artifacts, "demo-mobile.png"), fullPage: true });
+    await page.getByRole("button", { name: "Replay sample check" }).click();
+    assert.equal(await page.getByRole("button", { name: "Running sample check…" }).count(), 1);
+    await page.locator(".demo-result-details").getByText("notes/unrequested.txt").waitFor();
+    assert.equal(await page.locator("#play-demo").innerText(), "Replay sample check");
+    assert.doesNotMatch(await page.locator("#play-demo").innerText(), /clipboard|install command/i);
     await page.getByRole("button", { name: "Reset demo" }).click();
     await page.locator(".demo-result-details").getByText("notes/unrequested.txt").waitFor();
     await page.goto(`${server.url}/#how`);
@@ -120,7 +125,7 @@ test("demo direct links, reset, navigation focus, back focus, and not-found rout
     await page.evaluate(() => window.scrollBy(0, 137));
     const priorScroll = await page.evaluate(() => window.scrollY);
     assert.equal(priorScroll > 0, true);
-    await page.evaluate(() => document.querySelector('.site-header a[href="/privacy/"]').click());
+    await page.locator('.site-header a[href="/privacy/"]').click();
     await page.waitForURL("**/privacy/");
     assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("h1")), true);
     await page.goBack({ waitUntil: "domcontentloaded" });
