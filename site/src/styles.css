@@ -175,3 +175,57 @@ code, pre { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
   :root { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Polish pass: shared routing, demo, and touch-target treatment. */
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.site-header nav a, .site-footer a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
+.tracks code { min-height: 44px; }
+.action-note { max-width: 36ch; align-self: center; color: var(--muted); font-size: 15px; }
+.plain-facts { display: grid; gap: 6px; margin: 24px 0 0; padding: 0; color: var(--muted); font: 14px/1.5 ui-monospace, monospace; list-style: none; }
+.plain-facts li::before { content: "◆"; margin-right: 9px; color: var(--lime); }
+.problem-strip { display: flex; justify-content: space-between; gap: 24px; padding: 28px 32px; }
+.problem-strip p { max-width: 54ch; margin: 0; }
+.problem-strip strong { display: block; font-size: 14px; line-height: 1.5; letter-spacing: .08em; }
+.site-footer { min-height: 180px; grid-template-columns: minmax(170px, .8fr) minmax(220px, 1fr); gap: 8px 32px; align-content: center; }
+.site-footer nav { grid-column: 2; grid-row: 1 / span 2; flex-wrap: wrap; gap: 8px 20px; }
+.site-footer small { color: var(--muted); font-family: ui-monospace, monospace; }
+.demo-banner { position: sticky; z-index: 10; top: 0; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 6px max(14px, env(safe-area-inset-left)); border-bottom: 1px solid var(--lime); background: #18220f; color: var(--paper); }
+.demo-banner strong { color: var(--lime); font-family: ui-monospace, monospace; }
+.demo-banner span { color: var(--muted); font-size: 14px; }
+.demo-banner button, .demo-banner a { min-height: 44px; display: inline-flex; align-items: center; border: 0; padding: 0 10px; color: var(--cyan); background: transparent; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.demo-page { width: var(--page); margin: 0 auto; overflow: visible; }
+.demo-intro { padding: 72px 0 48px; border-bottom: 1px solid var(--grid); }
+.demo-intro h1 { max-width: 14ch; }
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding: 64px 0; }
+.demo-grid h2 { font-size: clamp(1.8rem, 4vw, 3rem); }
+.demo-terminal { min-height: 370px; }
+.recording { min-height: 260px; padding: 24px; color: var(--muted); font: 14px/1.55 ui-monospace, monospace; }
+.recording p { margin: 0 0 8px; }
+.recording .command { color: var(--paper); }
+.demo-files { padding: 0 0 80px; }
+.demo-files li { margin: 12px 0; color: var(--muted); }
+.not-found { width: var(--page); min-height: 65vh; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+.not-found h1 { max-width: 13ch; }
+.error-code { color: var(--coral); font: 700 14px/1 ui-monospace, monospace; letter-spacing: .12em; }
+
+@media (max-width: 900px) {
+  .site-footer { grid-template-columns: 1fr; }
+  .site-footer nav { grid-column: auto; grid-row: auto; }
+  .site-footer > p:nth-child(2) { display: block; }
+  .demo-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 650px) {
+  .site-header { align-items: stretch; }
+  .brand { min-height: 44px; }
+  .site-header nav { gap: 4px; }
+  .site-header nav a:not(.nav-cta) { min-width: 48px; display: inline-flex; padding: 0 6px; font-size: 13px; }
+  .site-header nav a:nth-child(2) { display: none; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .button { width: 100%; }
+  .problem-strip { align-items: flex-start; flex-direction: column; gap: 10px; padding: 22px 14px; text-align: left; }
+  .problem-strip strong { font-size: 14px; }
+  .demo-banner { align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 2px 10px; }
+  .demo-banner strong, .demo-banner span { flex-basis: 100%; }
+  .demo-intro { padding-top: 48px; }
+}

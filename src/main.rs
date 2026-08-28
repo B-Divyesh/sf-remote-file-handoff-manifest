@@ -1,15 +1,16 @@
 use clap::{Parser, Subcommand};
 use remote_file_handoff_manifest::{create_manifest, keygen, package, verify_manifest, Error};
 use serde::Serialize;
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 #[derive(Debug, Parser)]
 #[command(
     name = "handoff",
     version,
-    about = "Create and verify signed folder handoff manifests",
-    long_about = "Create transport-independent evidence for a folder delivery.\n\nEvery receipt records relative paths, sizes, and SHA-256 hashes and is signed with Ed25519. Files stay on your machine."
+    about = "Create and verify signed file lists for folder handoffs",
+    long_about = "Create a signed file list before sending a folder.\n\nEach list records relative paths, sizes, and SHA-256 hashes. Ed25519 signs the list so a recipient can check it."
 )]
 struct Cli {
     /// Emit one machine-readable JSON object to stdout.
@@ -22,29 +23,31 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Run a complete isolated sample handoff in a new temporary directory.
+    Demo,
     /// Generate a new Ed25519 signing identity.
     Keygen {
         /// Secret-key path. The matching public key uses the same stem and a .pub extension.
         #[arg(long, short)]
         output: PathBuf,
     },
-    /// Hash a folder and create signed JSON and HTML receipts.
+    /// Hash a folder and create signed JSON and HTML file lists.
     Create {
-        /// Folder to inventory recursively.
+        /// Folder to list recursively.
         source: PathBuf,
         /// Sender secret key created by `handoff keygen`.
         #[arg(long, short)]
         key: PathBuf,
-        /// New or empty receipt directory.
+        /// New or empty output directory.
         #[arg(long, short, default_value = "receipt")]
         output: PathBuf,
-        /// Sender contact included in the signed receipt.
+        /// Sender contact included in the signed file list.
         #[arg(long)]
         contact: Option<String>,
         /// RFC 3339 expiry, for example 2026-12-31T23:59:59Z.
         #[arg(long)]
         expires: Option<String>,
-        /// Encrypt receipts using RFHM_PASSPHRASE (minimum 12 characters).
+        /// Encrypt outputs using RFHM_PASSPHRASE (minimum 12 characters).
         #[arg(long)]
         encrypt: bool,
     },
@@ -52,7 +55,7 @@ enum Command {
     Verify {
         /// Plain manifest.json or encrypted manifest.json.age.
         manifest: PathBuf,
-        /// Received folder to compare with the signed inventory.
+        /// Received folder to compare with the signed file list.
         source: PathBuf,
         /// Trusted sender public key.
         #[arg(long, short)]
@@ -61,7 +64,7 @@ enum Command {
         #[arg(long)]
         ignore_expiry: bool,
     },
-    /// Copy a folder and its receipt into a portable directory package.
+    /// Copy a folder and its signed file list into a portable directory.
     Package {
         /// Folder whose files should be copied.
         source: PathBuf,
@@ -104,6 +107,7 @@ fn main() -> ExitCode {
 
 fn run(cli: &Cli) -> Result<(serde_json::Value, String, u8), (Error, u8)> {
     match &cli.command {
+        Command::Demo => run_demo().map_err(|error| (error, 1)),
         Command::Keygen { output } => {
             let report = keygen(output).map_err(|error| (error, 1))?;
             let human = format!(
@@ -130,7 +134,7 @@ fn run(cli: &Cli) -> Result<(serde_json::Value, String, u8), (Error, u8)> {
             )
             .map_err(|error| (error, 1))?;
             let human = format!(
-                "Receipt created\n  manifest: {}\n  HTML: {}\n  files: {}\n  bytes: {}\n  encrypted: {}",
+                "Signed file list created\n  JSON: {}\n  HTML: {}\n  files: {}\n  bytes: {}\n  encrypted: {}",
                 report.json_path,
                 report.html_path,
                 report.file_count,
@@ -175,13 +179,13 @@ fn run(cli: &Cli) -> Result<(serde_json::Value, String, u8), (Error, u8)> {
                     report
                         .altered
                         .iter()
-                        .map(|path| format!("  ALTERED: {path}")),
+                        .map(|path| format!("  CHANGED: {path}")),
                 );
                 lines.extend(
                     report
                         .unexpected
                         .iter()
-                        .map(|path| format!("  UNEXPECTED: {path}")),
+                        .map(|path| format!("  EXTRA: {path}")),
                 );
                 lines.join("\n")
             };
@@ -200,6 +204,93 @@ fn run(cli: &Cli) -> Result<(serde_json::Value, String, u8), (Error, u8)> {
             Ok((value(&report), human, 0))
         }
     }
+}
+
+fn run_demo() -> Result<(serde_json::Value, String, u8), Error> {
+    let root = unique_demo_directory()?;
+    let source = root.join("sender/project-aurora");
+    let received = root.join("recipient/project-aurora");
+    let key = root.join("sender/sender.key");
+    let receipt = root.join("sender/signed-file-list");
+    fs::create_dir_all(source.join("brand"))?;
+    fs::create_dir_all(source.join("exports"))?;
+    fs::create_dir_all(source.join("notes"))?;
+    fs::write(
+        source.join("brand/logo-master.ai"),
+        include_bytes!("../examples/client-handoff/brand/logo-master.ai"),
+    )?;
+    fs::write(
+        source.join("exports/final-cut.mov"),
+        include_bytes!("../examples/client-handoff/exports/final-cut.mov"),
+    )?;
+    fs::write(
+        source.join("notes/approval.txt"),
+        include_bytes!("../examples/client-handoff/notes/approval.txt"),
+    )?;
+    keygen(&key)?;
+    let created = create_manifest(
+        &source,
+        &key,
+        &receipt,
+        Some("alex@northstar.studio".into()),
+        None,
+        false,
+    )?;
+    copy_demo_tree(&source, &received)?;
+    fs::remove_file(received.join("exports/final-cut.mov"))?;
+    fs::write(received.join("brand/logo-master.ai"), b"draft artwork\n")?;
+    fs::write(
+        received.join("notes/unrequested.txt"),
+        b"not in sender list\n",
+    )?;
+    let report = verify_manifest(
+        &receipt.join("manifest.json"),
+        &received,
+        &root.join("sender/sender.pub"),
+        false,
+    )?;
+    let value = serde_json::json!({
+        "status": "demo_mismatch",
+        "workspace": root,
+        "created_files": created.file_count,
+        "missing": report.missing,
+        "altered": report.altered,
+        "unexpected": report.unexpected
+    });
+    let human = format!(
+        "Demo workspace created at {}\nSigned file list: 3 files\nMISMATCH — the received folder differs\n  MISSING: exports/final-cut.mov\n  CHANGED: brand/logo-master.ai\n  EXTRA: notes/unrequested.txt\nSample data stays in this temporary workspace; your folders were not read or changed.",
+        root.display()
+    );
+    Ok((value, human, 0))
+}
+
+fn unique_demo_directory() -> Result<PathBuf, Error> {
+    let base = std::env::temp_dir();
+    for attempt in 0..100_u32 {
+        let path = base.join(format!("handoff-demo-{}-{attempt}", std::process::id()));
+        match fs::create_dir(&path) {
+            Ok(()) => return Ok(path),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error.into()),
+        }
+    }
+    Err(Error::Message(
+        "could not create an isolated demo workspace".into(),
+    ))
+}
+
+fn copy_demo_tree(source: &Path, target: &Path) -> Result<(), Error> {
+    fs::create_dir_all(target)?;
+    for item in fs::read_dir(source)? {
+        let item = item?;
+        let destination = target.join(item.file_name());
+        if item.file_type()?.is_dir() {
+            copy_demo_tree(&item.path(), &destination)?;
+        } else {
+            fs::copy(item.path(), destination)?;
+        }
+    }
+    Ok(())
 }
 
 fn value<T: Serialize>(report: &T) -> serde_json::Value {

@@ -43,3 +43,9 @@ Transitions are 160–240 ms and limited to opacity and transform. The verificat
 
 - `site/public/relay-hero.webp`: an original raster illustration generated for this product with the factory image generator, then optimized locally to WebP. Prompt: “Wide pixel-art/demoscene editorial illustration for a privacy-first file manifest CLI: two dark indigo computer terminals on opposite edges, a sealed lime checksum packet crossing a cyan data bridge, tiny folder glyphs and hash blocks, limited palette of near-black, phosphor lime, electric cyan, warm coral, crisp 1-bit dither, no gradients, no readable text, no logos, no watermark, generous dark negative space, 16:9.” Model/provider: factory image-generation deployment (`/opt/fleet/lib/gen-image.sh`). Exact generation metadata is retained in `.factory/relay-hero.prompt.json`. License: project-owned generated asset under the repository MIT license.
 - UI glyphs and diagrams are hand-made with CSS/semantic text; no icon package or third-party assets.
+- `site/public/social-card.png` is a 1200×630 crop derived locally from the original relay illustration.
+- `site/public/favicon.svg` and `apple-touch-icon.png` are hand-made folder-and-checksum marks using the product palette.
+
+## Polish continuity
+
+Round 1 retains the dark pixel/demoscene direction. The persistent demo banner uses a subdued phosphor rack tone, while the recorded CLI and mismatch scope reuse the existing terminal grammar. Mobile navigation keeps Demo and Privacy visible; dense workflow decoration stacks below the first-screen task.

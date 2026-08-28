@@ -9,7 +9,7 @@ repository = "https://github.com/B-Divyesh/sf-remote-file-handoff-manifest"
 readme = "README.md"
 keywords = ["manifest", "checksum", "handoff", "cli"]
 categories = ["command-line-utilities", "cryptography"]
-include = ["/src/**", "/tests/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/CHANGELOG.md"]
+include = ["/src/**", "/tests/**", "/examples/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/CHANGELOG.md"]
 
 [[bin]]
 name = "handoff"

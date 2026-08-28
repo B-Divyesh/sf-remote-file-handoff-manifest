@@ -1,31 +1,32 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
-import { join, normalize } from "node:path";
+import { extname, join, normalize } from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
 import axe from "axe-core";
 
 const dist = join(process.cwd(), "dist/site");
+const artifacts = join(process.cwd(), "artifacts");
 
 function contentType(pathname) {
-  if (pathname.endsWith(".html")) return "text/html; charset=utf-8";
-  if (pathname.endsWith(".js")) return "text/javascript; charset=utf-8";
-  if (pathname.endsWith(".css")) return "text/css; charset=utf-8";
-  if (pathname.endsWith(".webp")) return "image/webp";
-  if (pathname.endsWith(".json")) return "application/json; charset=utf-8";
-  return "application/octet-stream";
+  return { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".webp": "image/webp", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json" }[extname(pathname)] ?? "application/octet-stream";
 }
 
 async function startStaticServer() {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
     let pathname = decodeURIComponent(url.pathname);
+    const candidate = normalize(join(dist, pathname));
+    if (!pathname.endsWith("/") && statSync(candidate, { throwIfNoEntry: false })?.isDirectory()) {
+      response.writeHead(301, { location: `${pathname}/` }).end();
+      return;
+    }
     if (pathname.endsWith("/")) pathname += "index.html";
     const path = normalize(join(dist, pathname));
     if (!path.startsWith(`${dist}/`) || !statSync(path, { throwIfNoEntry: false })?.isFile()) {
-      response.writeHead(404).end();
+      response.writeHead(404, { "content-type": "text/html; charset=utf-8" }).end(await readFile(join(dist, "404.html")));
       return;
     }
     response.writeHead(200, { "content-type": contentType(path) });
@@ -34,86 +35,109 @@ async function startStaticServer() {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   assert(address && typeof address !== "string");
-  return {
-    url: `http://localhost:${address.port}`,
-    close: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())),
-  };
+  return { url: `http://127.0.0.1:${address.port}`, close: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())) };
 }
 
-async function launchBrowser() {
-  return chromium.launch({ args: ["--disable-gpu"] });
-}
-
-test("production landing page keeps command scrollers keyboard-accessible and is clean in mobile axe", async () => {
+test("first screen names the audience and offers one honest sample action at desktop and mobile", async () => {
   const server = await startStaticServer();
-  const browser = await launchBrowser();
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await context.newPage();
+  const browser = await chromium.launch({ args: ["--disable-gpu"] });
+  await mkdir(artifacts, { recursive: true });
   try {
-    await page.goto(server.url, { waitUntil: "networkidle" });
-    const scrollers = page.locator(".tracks code, .terminal pre");
-    assert.equal(await scrollers.count(), 4);
-    assert.equal(await page.locator(".tracks code").nth(2).innerText(), "handoff verify manifest.json ./files -p sender.pub");
-    for (let index = 0; index < await scrollers.count(); index += 1) {
-      const scroller = scrollers.nth(index);
-      await expectFocusableScroller(scroller);
+    for (const viewport of [{ width: 390, height: 844, name: "mobile" }, { width: 1440, height: 900, name: "desktop" }]) {
+      const page = await browser.newPage({ viewport });
+      const errors = [];
+      page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+      await page.goto(server.url, { waitUntil: "networkidle" });
+      assert.equal(await page.locator("h1").innerText(), "Verify every file in a folder handoff.");
+      assert.match(await page.locator(".lede").innerText(), /freelancers and small teams/);
+      assert.equal(await page.getByRole("link", { name: "Try it with sample data" }).getAttribute("href"), "/?demo=1");
+      assert.equal(await page.locator(".hero .button.primary").count(), 1);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+      await page.screenshot({ path: join(artifacts, `home-${viewport.name}.png`), fullPage: true });
+      assert.deepEqual(errors, []);
+      await page.close();
     }
-    await page.addScriptTag({ content: axe.source });
-    const violations = await page.evaluate(async () => {
-      const result = await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } });
-      return result.violations
-        .filter((violation) => ["serious", "critical"].includes(violation.impact))
-        .map((violation) => ({ id: violation.id, impact: violation.impact, nodes: violation.nodes.map((node) => node.target) }));
-    });
-    assert.deepEqual(violations, []);
-  } finally {
-    await browser.close();
-    await server.close();
-  }
+  } finally { await browser.close(); await server.close(); }
 });
 
-async function expectFocusableScroller(locator) {
-  assert.equal(await locator.getAttribute("tabindex"), "0");
-  await locator.focus();
-  assert.equal(await locator.evaluate((element) => document.activeElement === element), true);
-}
-
-test("production landing page registers its service worker, controls a reload, and serves the shell offline", async () => {
+test("all routes have unique metadata, one h1, shared navigation, large targets, and no serious axe issues", async () => {
   const server = await startStaticServer();
-  const browser = await launchBrowser();
+  const browser = await chromium.launch({ args: ["--disable-gpu"] });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  const titles = new Set();
+  try {
+    for (const route of ["/", "/demo/", "/privacy/", "/terms/", "/missing-review-path"]) {
+      const response = await page.goto(`${server.url}${route}`, { waitUntil: "networkidle" });
+      assert.equal(response?.status(), route.includes("missing") ? 404 : 200);
+      assert.equal(await page.locator("html").getAttribute("lang"), "en");
+      assert.equal(await page.locator("main").count(), 1);
+      assert.equal(await page.locator("h1").count(), 1);
+      assert.equal(await page.locator('link[rel="canonical"]').count(), 1);
+      assert.equal(await page.locator('meta[property="og:image"]').count(), 1);
+      assert.equal(await page.locator('meta[name="twitter:card"]').count(), 1);
+      assert.equal(await page.locator('link[rel="apple-touch-icon"]').count(), 1);
+      titles.add(await page.title());
+      assert.equal(await page.getByRole("link", { name: "Handoff home" }).count(), 1);
+      assert.equal(await page.getByRole("link", { name: "Privacy", exact: true }).count() >= 1, true);
+      const smallTargets = await page.locator("a:visible, button:visible, input:visible").evaluateAll((items) => items.filter((item) => {
+        const box = item.getBoundingClientRect();
+        return box.width < 44 || box.height < 44;
+      }).map((item) => ({ text: item.textContent?.trim(), tag: item.tagName, width: item.getBoundingClientRect().width, height: item.getBoundingClientRect().height })));
+      assert.deepEqual(smallTargets, []);
+      await page.addScriptTag({ content: axe.source });
+      const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } })).violations.filter((item) => ["serious", "critical"].includes(item.impact)).map((item) => item.id));
+      assert.deepEqual(violations, []);
+    }
+    assert.equal(titles.size, 5);
+  } finally { await browser.close(); await server.close(); }
+});
+
+test("demo direct links, reset, navigation focus, back focus, and not-found routing work", async () => {
+  const server = await startStaticServer();
+  const browser = await chromium.launch({ args: ["--disable-gpu"] });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  try {
+    await page.goto(`${server.url}/?demo=1`);
+    await page.waitForURL("**/demo/");
+    assert.equal(await page.title(), "Demo — Remote File Handoff Manifest");
+    assert.equal(await page.getByText("Demo — sample data, nothing is saved").count(), 1);
+    await page.screenshot({ path: join(artifacts, "demo-mobile.png"), fullPage: true });
+    await page.getByRole("link", { name: "Privacy", exact: true }).first().click();
+    await page.waitForURL("**/privacy/");
+    assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("h1")), true);
+    await page.goBack();
+    assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("h1")), true);
+    const missing = await page.goto(`${server.url}/definitely-missing-review-1`);
+    assert.equal(missing?.status(), 404);
+    assert.equal(await page.locator("h1").innerText(), "This handoff path is missing.");
+    assert.equal(await page.getByRole("link", { name: "Return home" }).getAttribute("href"), "/");
+    await page.screenshot({ path: join(artifacts, "not-found-mobile.png"), fullPage: true });
+  } finally { await browser.close(); await server.close(); }
+});
+
+test("production service worker controls home and demo offline", async () => {
+  const server = await startStaticServer();
+  const browser = await chromium.launch({ args: ["--disable-gpu"] });
   const context = await browser.newContext();
   const page = await context.newPage();
   try {
-    await page.goto(server.url, { waitUntil: "networkidle" });
+    await page.goto(`${server.url}/demo/`, { waitUntil: "networkidle" });
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.reload({ waitUntil: "networkidle" });
-    const { controlled, scriptUrl } = await page.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration();
-      await registration?.update();
-      return {
-        controlled: Boolean(navigator.serviceWorker.controller),
-        scriptUrl: registration?.active?.scriptURL ?? "",
-      };
-    });
-    assert.equal(controlled, true);
-    assert.match(scriptUrl, /\/sw\.js$/);
+    assert.equal(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)), true);
     await context.setOffline(true);
-    const offlineResponse = await page.reload({ waitUntil: "domcontentloaded" });
-    assert.equal(offlineResponse?.ok(), true);
-    assert.match(await page.locator("h1").innerText(), /Prove the whole folder arrived/);
-  } finally {
-    await browser.close();
-    await server.close();
-  }
+    assert.equal((await page.reload({ waitUntil: "domcontentloaded" }))?.ok(), true);
+    assert.match(await page.locator("h1").innerText(), /sample handoff/);
+  } finally { await browser.close(); await server.close(); }
 });
 
-test("deployment configuration protects responses and keeps versioned assets immutable", async () => {
+test("deployment configuration has security headers, immutable assets, and a real 404 rule", async () => {
   const config = JSON.parse(await readFile(join(dist, "staticwebapp.config.json"), "utf8"));
   assert.match(config.globalHeaders["Content-Security-Policy"], /default-src 'self'/);
   assert.match(config.globalHeaders["Permissions-Policy"], /camera=\(\)/);
   assert.match(config.globalHeaders["Strict-Transport-Security"], /max-age=31536000/);
-  const headersFor = (route) => config.routes.find((entry) => entry.route === route)?.headers?.["Cache-Control"];
-  assert.equal(headersFor("/assets/*"), "public, max-age=31536000, immutable");
-  assert.equal(headersFor("/relay-hero.webp"), "public, max-age=31536000, immutable");
-  assert.equal(headersFor("/sw.js"), "no-cache, no-store, must-revalidate");
+  assert.equal(config.routes.find((entry) => entry.route === "/assets/*")?.headers?.["Cache-Control"], "public, max-age=31536000, immutable");
+  assert.equal(config.routes.find((entry) => entry.route === "/sw.js")?.headers?.["Cache-Control"], "no-cache, no-store, must-revalidate");
+  assert.deepEqual(config.routes.at(-1), { route: "/*", rewrite: "/404.html", statusCode: 404 });
 });

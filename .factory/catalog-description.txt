@@ -1,0 +1,1 @@
+Verify every file in a folder handoff with a signed list of exact missing, changed, and extra paths.

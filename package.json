@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "test": "cargo test && tsc --noEmit && vitest run && npm run test:browser",
+    "test": "cargo test && tsc --noEmit && vitest run src/site.test.ts src/verifier.test.ts && npm run test:claims && npm run test:browser",
+    "test:claims": "cargo build --quiet && npm run build:site --silent && vitest run src/claims.test.ts",
     "test:browser": "npm run build:site && node --test --test-concurrency=1 browser-tests/landing.test.mjs",
     "build": "npm run build:site",
     "build:site": "vite build"

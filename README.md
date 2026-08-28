@@ -1,91 +1,98 @@
-# Remote File Handoff Manifest
+# Verify every file in a folder handoff
 
-`handoff` creates transport-independent evidence for a folder delivery. It records every relative path, byte size, and SHA-256 hash in a signed manifest, produces a readable HTML receipt, and tells a recipient exactly which files are missing, altered, or unexpected.
+`handoff` creates a signed file list for a folder. It records each relative path, byte size, and SHA-256 hash.
+It also creates a readable HTML report. Recipients see exact missing, changed, and extra paths.
 
-It is for freelancers and small teams handing private folders over NAS mounts, SFTP, removable media, or peer-to-peer links. It does not upload files or guarantee delivery.
+The tool is for freelancers and small teams sending private folders. It checks contents but does not guarantee delivery.
+
+Try the isolated sample at [the web demo](https://remote-file-handoff-manifest.sociobot.in/?demo=1), or run:
+
+```sh
+cargo run -- demo
+```
+
+The CLI demo uses the files in `examples/client-handoff/`. It creates a separate temporary workspace and prints its path.
 
 ## Install
 
-Build the single binary with Rust 1.85 or newer:
+Build the single command-line binary:
 
 ```sh
+git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
+cd sf-remote-file-handoff-manifest
 cargo install --path .
-handoff --help
 ```
 
-## Usage
+## Create and verify a signed file list
 
-Create a signing identity once. Keep `sender.key` private; send `sender.pub` to recipients through a trusted channel.
+Create a sender key:
 
 ```sh
 handoff keygen --output sender.key
 ```
 
-Build signed JSON and HTML receipts for a folder:
+Keep `sender.key` private. Confirm the displayed public-key fingerprint with the recipient through a separate trusted channel.
+
+Create signed JSON and HTML outputs:
 
 ```sh
-handoff create ./deliverables --key sender.key --output ./receipt \
-  --contact "alex@example.com" --expires 2026-12-31T23:59:59Z
+handoff create ./deliverables --key sender.key --output ./signed-file-list
 ```
 
-Copy the files and receipts into a portable package. The output can be transferred by any ordinary tool:
+Create a portable directory with the files and signed outputs:
 
 ```sh
-handoff package ./deliverables --manifest ./receipt/manifest.json --output ./handoff-package
+handoff package ./deliverables --manifest ./signed-file-list/manifest.json --output ./package
 ```
 
-At the destination, verify the received `files/` directory:
+Send that directory with your usual transfer tool. On the recipient’s machine, check the received `files/` folder:
 
 ```sh
-handoff verify ./handoff-package/manifest.json ./handoff-package/files \
-  --public-key sender.pub
+handoff verify ./package/manifest.json ./package/files --public-key ./package/signer.pub
 ```
 
-For scripts, add `--json`. A clean verification exits `0`; discrepancies exit `3`; an invalid signature or decryption failure exits `4`; operational errors exit `1`; invalid CLI usage exits `2`.
+Add `--json` before a subcommand for machine-readable output. Clean checks exit `0`. File differences exit `3`.
+Signature or decryption failures exit `4`. Operational failures exit `1`. Invalid command usage exits `2`.
+
+## Encrypt file names
+
+Plain signed file lists show filenames. Set a passphrase in the environment to encrypt both output files:
 
 ```sh
-handoff --json verify ./receipt/manifest.json ./received --public-key sender.pub
+export RFHM_PASSPHRASE='use a long passphrase here'
+handoff create ./deliverables --key sender.key --output ./private-list --encrypt
 ```
 
-### Private manifests
+The encrypted JSON and HTML outputs do not display filenames. Use the command-line tool to decrypt and verify them.
+Source files and packaged files remain unencrypted and unchanged.
 
-Plain manifests reveal filenames. Encrypt both receipts with a passphrase supplied through the environment (never a command-line argument):
+## Format reference
 
-```sh
-RFHM_PASSPHRASE='correct horse battery staple' \
-  handoff create ./deliverables --key sender.key --output ./private-receipt --encrypt
+Format version `1` is UTF-8 JSON. Ed25519 signs the exact compact JSON encoding of `payload`.
+Entries are ordered by relative path and use `/` separators. Each entry contains `path`, `size`, and lowercase SHA-256 `sha256`.
+Readers reject unsupported versions, absolute paths, and paths containing `..`.
 
-RFHM_PASSPHRASE='correct horse battery staple' \
-  handoff verify ./private-receipt/manifest.json.age ./received --public-key sender.pub
-```
-
-The encrypted HTML file is a privacy-safe cover sheet; use the CLI to decrypt and verify. Files themselves are not encrypted.
-
-## Manifest format
-
-Version `1` is UTF-8 JSON. The signature is Ed25519 over the exact compact JSON encoding of the `payload` object. Entries are sorted by relative path and use `/` separators. Each entry has `path`, `size`, and a lowercase SHA-256 `sha256` value. Implementations must reject unsupported versions and unsafe absolute or parent-traversal paths.
-
-## Development
+## Develop and test
 
 ```sh
 npm ci
 npm test
-npm run build:site       # writes dist/site
-cargo package --allow-dirty
+npm run build
+cargo package
 ```
 
-Run the landing page locally with `npm run dev`. The browser verifier hashes selected local files in place; files are never uploaded or stored.
+`npm test` runs Rust tests, type checks, site tests, claim tests, and browser checks. The build output is `dist/site`.
+The site has no account, analytics, advertising, or third-party runtime code.
+Browser checks do not upload or store selected files. The service worker caches only public site assets for offline use.
 
-`npm test` also builds the production site and runs Chromium coverage for the 390 px mobile accessibility gate, service-worker registration, offline reload, and deployment response policy. The browser version is pinned in `package.json`.
+See [.factory/claims.json](.factory/claims.json) for each public promise and its verification command.
+See [.factory/demo.md](.factory/demo.md) for demo isolation details.
 
 ## Deploy
 
-The factory deploys the static output in `dist/site` to `https://remote-file-handoff-manifest.sociobot.in`. `site/public/staticwebapp.config.json` ships with that output and defines the security headers plus immutable caching for hashed assets. Build it with `npm ci && npm run build:site`; do not publish the crate from this repository.
-
-## Privacy and security
-
-There is no telemetry, account, hosted storage, runtime CDN, or external request. Signing proves that the manifest came from the holder of the key and has not changed; it does not prove that a transport completed. Protect the signing key and share its public half through a trusted channel.
+The factory deploys `dist/site`. Maintainers can build it with `npm ci && npm run build:site`.
+Registry credentials are factory-owned, so do not publish the crate from this repository.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE).

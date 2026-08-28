@@ -17,7 +17,7 @@ function serviceWorker(): Plugin {
       const files = listOutputFiles(outputDirectory)
         .filter((file) => file !== "sw.js" && file !== "staticwebapp.config.json")
         .sort();
-      const shell = [...new Set([...files.map((file) => `/${file}`), "/", "/privacy/", "/terms/"])].sort();
+      const shell = [...new Set([...files.map((file) => `/${file}`), "/", "/demo/", "/privacy/", "/terms/"])].sort();
       const versionHash = createHash("sha256");
       for (const file of files) {
         versionHash.update(file);
@@ -51,10 +51,17 @@ export default defineConfig({
     rollupOptions: {
       input: {
         home: resolve(projectRoot, "site/index.html"),
+        demo: resolve(projectRoot, "site/demo/index.html"),
         privacy: resolve(projectRoot, "site/privacy/index.html"),
         terms: resolve(projectRoot, "site/terms/index.html"),
+        notFound: resolve(projectRoot, "site/404.html"),
       },
     },
   },
   plugins: [serviceWorker()],
+  test: {
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    fileParallelism: false,
+  },
 });

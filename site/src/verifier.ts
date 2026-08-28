@@ -38,51 +38,51 @@ export function parseManifest(text: string): Manifest {
   try {
     value = JSON.parse(text);
   } catch {
-    throw new Error("The manifest is not valid JSON. Choose the plain manifest.json file.");
+    throw new Error("This file is not valid JSON. Choose the plain manifest.json file.");
   }
   if (!value || typeof value !== "object" || !("payload" in value) || !("signature" in value)) {
-    throw new Error("This JSON file is not a Remote File Handoff Manifest receipt.");
+    throw new Error("This is not a Handoff signed file list. Ask the sender to create it again.");
   }
   const manifest = value as Manifest;
   const payload = manifest.payload;
   if (payload.format !== "remote-file-handoff-manifest" || payload.version !== 1) {
-    throw new Error("This manifest format or version is not supported by the browser verifier.");
+    throw new Error("This signed file list version is not supported. Use the current command-line tool.");
   }
   if (!Array.isArray(payload.files) || payload.file_count !== payload.files.length) {
-    throw new Error("The manifest inventory is incomplete or malformed.");
+    throw new Error("This signed file list is incomplete. Ask the sender to create it again.");
   }
   let previous = "";
   let total = 0;
   for (const entry of payload.files) {
     if (!entry || typeof entry.path !== "string" || !isSafePath(entry.path)) {
-      throw new Error("The manifest contains an unsafe or invalid relative path.");
+      throw new Error("This signed file list contains an unsafe path. Do not use it; ask the sender to create it again.");
     }
     if (previous && previous >= entry.path) {
-      throw new Error("Manifest paths are not unique and sorted.");
+      throw new Error("The paths are duplicated or unsorted. Ask the sender to create the signed file list again.");
     }
     if (!Number.isSafeInteger(entry.size) || entry.size < 0 || !/^[0-9a-f]{64}$/.test(entry.sha256)) {
-      throw new Error(`The inventory entry for ${entry.path} is malformed.`);
+      throw new Error(`The file entry for ${entry.path} is invalid. Ask the sender to create the signed file list again.`);
     }
     previous = entry.path;
     total += entry.size;
   }
-  if (total !== payload.total_bytes) throw new Error("The manifest byte total is inconsistent.");
+  if (total !== payload.total_bytes) throw new Error("The byte total is wrong. Ask the sender to create the signed file list again.");
   return manifest;
 }
 
 export async function verifySignature(manifest: Manifest, publicKeyText: string): Promise<void> {
   const match = publicKeyText.trim().match(/^RFHM-ED25519-PUBLIC-1\n([A-Za-z0-9+/=]+)$/);
-  if (!match) throw new Error("The sender public key has an invalid header or encoding.");
+  if (!match) throw new Error("The sender public key is invalid. Choose the sender’s .pub file again.");
   const trusted = base64Bytes(match[1]);
   const embedded = base64Bytes(manifest.payload.signer_public_key);
   if (!equalBytes(trusted, embedded)) {
-    throw new Error("The manifest signer does not match the trusted sender key.");
+    throw new Error("The signer does not match this public key. Stop and confirm the key with the sender.");
   }
   let key: CryptoKey;
   try {
     key = await crypto.subtle.importKey("raw", ownedBuffer(trusted), { name: "Ed25519" }, false, ["verify"]);
   } catch {
-    throw new Error("This browser cannot verify Ed25519 signatures. Use the handoff CLI instead.");
+    throw new Error("This browser cannot verify Ed25519 signatures. Run the command-line verifier instead.");
   }
   const valid = await crypto.subtle.verify(
     "Ed25519",
@@ -90,7 +90,7 @@ export async function verifySignature(manifest: Manifest, publicKeyText: string)
     ownedBuffer(base64Bytes(manifest.signature)),
     new TextEncoder().encode(JSON.stringify(manifest.payload)),
   );
-  if (!valid) throw new Error("The manifest signature is invalid. Do not trust this receipt.");
+  if (!valid) throw new Error("The signature is invalid. Do not accept this handoff.");
 }
 
 export async function compareInventory(expected: ManifestFile[], actualFiles: FileLike[]): Promise<Comparison> {
@@ -132,7 +132,7 @@ function base64Bytes(value: string): Uint8Array {
   try {
     return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
   } catch {
-    throw new Error("The manifest contains invalid cryptographic data.");
+    throw new Error("The signed file list contains invalid cryptographic data. Ask the sender to create it again.");
   }
 }
 

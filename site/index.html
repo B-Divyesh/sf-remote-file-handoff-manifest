@@ -4,146 +4,76 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#080b12" />
-    <meta name="description" content="Create a signed inventory for any folder handoff, then prove exactly what arrived." />
-    <title>Remote File Handoff Manifest — prove what arrived</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23080b12' d='M0 0h32v32H0z'/%3E%3Cpath fill='%23c8ff3d' d='M5 8h9l3 4h10v14H5zm3 4v10h16v-7h-9l-3-3z'/%3E%3C/svg%3E" />
+    <meta name="description" content="Create a signed file list, then find missing, changed, and extra files in a folder handoff." />
+    <title>Handoff — verify every file in a folder</title>
+    <link rel="canonical" href="https://remote-file-handoff-manifest.sociobot.in/" />
+    <meta property="og:type" content="website" /><meta property="og:title" content="Handoff — verify every file in a folder" />
+    <meta property="og:description" content="Create a signed file list, then find missing, changed, and extra files in a folder handoff." />
+    <meta property="og:url" content="https://remote-file-handoff-manifest.sociobot.in/" /><meta property="og:image" content="https://remote-file-handoff-manifest.sociobot.in/social-card.png" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Handoff — verify every file in a folder" /><meta name="twitter:description" content="Find missing, changed, and extra files in a folder handoff." /><meta name="twitter:image" content="https://remote-file-handoff-manifest.sociobot.in/social-card.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" /><link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <body>
+  <body data-page="home">
     <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Remote File Handoff Manifest home">
-        <span class="brand-mark" aria-hidden="true">▣</span>
-        <span>HANDOFF<span class="blink">_</span></span>
-      </a>
-      <nav aria-label="Primary navigation">
-        <a href="#how">How it works</a>
-        <a href="#verify">Verify here</a>
-        <a class="nav-cta" href="#install">Install CLI</a>
-      </nav>
+      <a class="brand" href="/" aria-label="Handoff home"><span class="brand-mark" aria-hidden="true">▣</span><span>HANDOFF_</span></a>
+      <nav aria-label="Primary navigation"><a href="/demo/">Demo</a><a href="#how">How it works</a><a href="/privacy/">Privacy</a></nav>
     </header>
-
+    <div id="route-status" class="visually-hidden" aria-live="polite"></div>
     <main id="main">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow"><span>◆</span> TRANSPORT INDEPENDENT</p>
-          <h1 id="hero-title">Prove the whole folder arrived.</h1>
-          <p class="lede">Create a signed inventory before you send. Your recipient checks every filename, byte count, and SHA-256 hash after it lands—over any NAS, SFTP, drive, or peer-to-peer link.</p>
+          <p class="eyebrow"><span>◆</span> FOLDER HANDOFF CHECK</p>
+          <h1 id="hero-title" tabindex="-1">Verify every file in a folder handoff.</h1>
+          <p class="lede">For freelancers and small teams sending private folders, show recipients exactly what is missing or changed.</p>
           <div class="hero-actions">
-            <a class="button primary" href="#install">Build a receipt</a>
-            <a class="button secondary" href="#verify">Verify a handoff</a>
+            <a class="button primary" href="/?demo=1">Try it with sample data</a>
+            <span class="action-note">Opens a failed handoff with realistic files and exact mismatch paths.</span>
           </div>
-          <p class="no-cloud"><span aria-hidden="true">●</span> No account · No upload · No tracking</p>
+          <ul class="plain-facts" aria-label="Product facts"><li>Free under the MIT License</li><li>Selected files stay in your browser</li><li>Reopens offline after the first visit</li></ul>
         </div>
         <figure class="relay-figure">
-          <img src="/relay-hero.webp" width="1200" height="675" alt="Pixel-art file packet travelling securely between two computers" fetchpriority="high" />
-          <figcaption><span>TX</span> signed manifest <i aria-hidden="true"></i> <span>RX</span> verified folder</figcaption>
+          <img src="/relay-hero.webp" width="1200" height="675" alt="Pixel-art diagram of a signed file list moving between two computers" fetchpriority="high" />
+          <figcaption><span>Sender: signed file list</span><i aria-hidden="true"></i><span>Recipient: checked folder</span></figcaption>
         </figure>
       </section>
-
-      <section class="problem-strip" aria-label="Verification summary">
-        <div><strong>10,000</strong><span>files checked</span></div>
-        <div><strong>1</strong><span>altered file found</span></div>
-        <div><strong>0</strong><span>false reports</span></div>
-        <p>This is evidence of contents, not a promise from the transport.</p>
+      <section class="problem-strip" aria-label="Controlled test result">
+        <p><strong>TEST // 10,000 FILES</strong> Changing one file in the fixture reports only that path.</p>
+        <p>This checks file contents. It does not guarantee delivery.</p>
       </section>
-
       <section class="workflow section" id="how" aria-labelledby="how-title">
-        <div class="section-heading">
-          <p class="eyebrow">01 / THE RELAY</p>
-          <h2 id="how-title">Three commands. One unambiguous handoff.</h2>
-        </div>
+        <div class="section-heading"><p class="eyebrow">01 / SEND AND CHECK</p><h2 id="how-title">How to verify a folder handoff</h2></div>
         <ol class="tracks">
-          <li>
-            <span class="track-number">01</span>
-            <div><h3>Sign the inventory</h3><p>The sender hashes every file and signs the ordered list with an Ed25519 identity.</p></div>
-            <code tabindex="0" aria-label="Command: create a signed inventory">handoff create ./final -k sender.key</code>
-          </li>
-          <li>
-            <span class="track-number">02</span>
-            <div><h3>Move it your way</h3><p>Copy the files and receipt through your existing NAS, SFTP client, drive, or private link.</p></div>
-            <code tabindex="0" aria-label="Command: package the files and receipt">handoff package ./final -m receipt/manifest.json -o package</code>
-          </li>
-          <li>
-            <span class="track-number">03</span>
-            <div><h3>Verify what landed</h3><p>The recipient sees exact missing, altered, and unexpected paths—without uploading anything.</p></div>
-            <code tabindex="0" aria-label="Command: verify the received files">handoff verify manifest.json ./files -p sender.pub</code>
-          </li>
+          <li><span class="track-number">01</span><div><h3>Sign the file list</h3><p>The sender records each path, size, and SHA-256 hash. Their Ed25519 key signs the ordered list.</p></div><code tabindex="0">handoff create ./final -k sender.key</code></li>
+          <li><span class="track-number">02</span><div><h3>Send the folder</h3><p>Send the folder and signed file list with your usual transfer tool.</p></div><code tabindex="0">handoff package ./final -m receipt/manifest.json -o package</code></li>
+          <li><span class="track-number">03</span><div><h3>Verify the received folder</h3><p>The recipient sees the exact missing, changed, and extra paths.</p></div><code tabindex="0">handoff verify manifest.json ./files -p sender.pub</code></li>
         </ol>
       </section>
-
       <section class="install section" id="install" aria-labelledby="install-title">
-        <div class="section-heading">
-          <p class="eyebrow">02 / BUILD</p>
-          <h2 id="install-title">A single binary. Open format.</h2>
-          <p>Rust 1.85+ · MIT licensed · JSON output for scripts · no telemetry</p>
-        </div>
-        <div class="terminal" aria-label="Installation commands">
-          <div class="terminal-bar"><span></span><span></span><span></span><b>~/handoff</b></div>
-          <pre tabindex="0" aria-label="Installation commands. Scroll horizontally to read long commands."><code id="install-command"><span class="prompt">$</span> git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
+        <div class="section-heading"><p class="eyebrow">02 / INSTALL</p><h2 id="install-title">Install the command-line tool</h2><p>Build one Rust binary. Use JSON output in scripts.</p></div>
+        <div class="terminal" aria-label="Installation commands"><div class="terminal-bar"><span></span><span></span><span></span><b>~/handoff</b></div><pre tabindex="0"><code id="install-command"><span class="prompt">$</span> git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
 <span class="prompt">$</span> cd sf-remote-file-handoff-manifest
 <span class="prompt">$</span> cargo install --path .
-<span class="success">✓ handoff 0.1.0 ready</span></code></pre>
-          <button class="copy-button" type="button" data-copy="git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git && cd sf-remote-file-handoff-manifest && cargo install --path .">Copy install command</button>
-        </div>
-        <div class="capabilities" role="list" aria-label="Capabilities">
-          <p role="listitem"><span>SHA</span> SHA-256 per file</p>
-          <p role="listitem"><span>SIG</span> Ed25519 signed</p>
-          <p role="listitem"><span>AGE</span> Optional encryption</p>
-          <p role="listitem"><span>JSON</span> Scriptable output</p>
-        </div>
+<span class="success">✓ handoff 0.1.0 ready</span></code></pre><button class="copy-button" type="button" data-copy="git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git && cd sf-remote-file-handoff-manifest && cargo install --path .">Copy install command</button></div>
+        <div class="capabilities" role="list" aria-label="Command-line tool capabilities"><p role="listitem"><span>HASH</span> SHA-256 hash for each file</p><p role="listitem"><span>SIGN</span> Ed25519 signature</p><p role="listitem"><span>LOCK</span> Encrypt signed file lists</p><p role="listitem"><span>JSON</span> JSON output for scripts</p></div>
       </section>
-
       <section class="verifier section" id="verify" aria-labelledby="verify-title">
-        <div class="section-heading">
-          <p class="eyebrow">03 / RECEIVE</p>
-          <h2 id="verify-title">Check a handoff in this browser.</h2>
-          <p>Select the plain JSON receipt, the received folder, and the sender public key. Hashing happens on this device; nothing leaves the tab.</p>
-        </div>
+        <div class="section-heading"><p class="eyebrow">03 / CHECK</p><h2 id="verify-title">Verify the received folder</h2><p>Choose the signed file list, received folder, and sender’s verified public key. Selected files stay in this tab.</p></div>
         <div class="verifier-grid">
           <form id="verify-form" novalidate>
-            <div class="field">
-              <label for="manifest-file"><span>1.</span> Signed manifest</label>
-              <input id="manifest-file" name="manifest" type="file" accept="application/json,.json" required aria-describedby="manifest-help" />
-              <small id="manifest-help">Choose <code>manifest.json</code>. Encrypted receipts require the CLI.</small>
-            </div>
-            <div class="field">
-              <label for="folder-files"><span>2.</span> Received folder</label>
-              <input id="folder-files" name="folder" type="file" multiple required aria-describedby="folder-help" />
-              <small id="folder-help">Choose the package’s <code>files</code> folder. Empty folders must be checked with the CLI.</small>
-            </div>
-            <div class="field">
-              <label for="public-key-file"><span>3.</span> Trusted sender key</label>
-              <input id="public-key-file" name="publicKey" type="file" accept=".pub,text/plain" required aria-describedby="key-help" />
-              <small id="key-help">Use the <code>.pub</code> file received through a trusted channel.</small>
-            </div>
-            <div class="form-actions">
-              <button class="button primary" type="submit">Verify selected files</button>
-              <button class="button text-button" id="sample-button" type="button">Preview a mismatch</button>
-            </div>
-            <p class="offline-note" id="offline-note" hidden><span aria-hidden="true">◫</span> You’re offline. Verification still works locally.</p>
+            <div class="field"><label for="manifest-file"><span>1.</span> Signed file list</label><input id="manifest-file" name="manifest" type="file" accept="application/json,.json" required aria-describedby="manifest-help" /><small id="manifest-help">Choose <code>manifest.json</code>. Use the command-line tool for encrypted lists.</small></div>
+            <div class="field"><label for="folder-files"><span>2.</span> Received folder</label><input id="folder-files" name="folder" type="file" multiple required aria-describedby="folder-help" /><small id="folder-help">Choose the received folder. Use the command-line tool for an empty folder.</small></div>
+            <div class="field"><label for="public-key-file"><span>3.</span> Sender’s verified public key</label><input id="public-key-file" name="publicKey" type="file" accept=".pub,text/plain" required aria-describedby="key-help" /><small id="key-help">Choose the sender’s <code>.pub</code> file after confirming its fingerprint.</small></div>
+            <div class="form-actions"><button class="button primary" type="submit">Verify selected files</button><a class="button text-button" href="/demo/">View sample result</a></div>
+            <p class="offline-note" id="offline-note" hidden><span aria-hidden="true">◫</span> You are offline. Local verification remains available.</p>
           </form>
-          <div class="result-panel" id="result-panel" data-state="idle" aria-live="polite" aria-busy="false">
-            <div class="scope" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            <p class="result-kicker" id="result-kicker">READY // LOCAL MODE</p>
-            <h3 id="result-title">Waiting for a receipt</h3>
-            <p id="result-summary">Your exact missing, changed, and extra paths will appear here.</p>
-            <div id="result-details"></div>
-          </div>
+          <div class="result-panel" id="result-panel" data-state="idle" aria-live="polite" aria-busy="false"><div class="scope" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p class="result-kicker" id="result-kicker">READY ON THIS DEVICE</p><h3 id="result-title">Choose three items to verify</h3><p id="result-summary">Missing, changed, and extra paths will appear here.</p><div id="result-details"></div></div>
         </div>
       </section>
-
-      <section class="private section" aria-labelledby="private-title">
-        <div><p class="eyebrow">04 / PRIVATE MODE</p><h2 id="private-title">Filenames can be sensitive too.</h2></div>
-        <div><p>Add <code>--encrypt</code> and provide <code>RFHM_PASSPHRASE</code>. Both JSON and HTML receipts are encrypted with the age file format; your files remain where they are.</p><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest#private-manifests">Read the security notes <span aria-hidden="true">→</span></a></div>
-      </section>
+      <section class="private section" aria-labelledby="private-title"><div><p class="eyebrow">04 / PROTECT NAMES</p><h2 id="private-title">Protect filenames in signed file lists</h2></div><div><p>Set <code>RFHM_PASSPHRASE</code> and add <code>--encrypt</code>. The tool encrypts the JSON and HTML outputs; source files do not change.</p><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest#encrypt-file-names">Read the security notes on GitHub (external) <span aria-hidden="true">→</span></a></div></section>
     </main>
-
-    <footer class="site-footer">
-      <p><span class="brand-mark" aria-hidden="true">▣</span> Remote File Handoff Manifest</p>
-      <p>Open source infrastructure for clearer handoffs.</p>
-      <nav aria-label="Legal and project links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest">Source</a></nav>
-    </footer>
+    <footer class="site-footer"><p><span class="brand-mark" aria-hidden="true">▣</span> Remote File Handoff Manifest</p><p>Check a received folder against a sender’s signed file list.</p><nav aria-label="Legal and project links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest">Source on GitHub (external)</a><a href="https://param.build/">Built by Param Factory (external)</a></nav><small>Version 0.1.0 · build 6173552-p1</small></footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
