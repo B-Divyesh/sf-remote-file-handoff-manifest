@@ -13,7 +13,7 @@ use std::process::ExitCode;
     long_about = "Create a signed file list before sending a folder.\n\nEach list records relative paths, sizes, and SHA-256 hashes. Ed25519 signs the list so a recipient can check it."
 )]
 struct Cli {
-    /// Emit one machine-readable JSON object to stdout.
+    /// Print one JSON object for scripts.
     #[arg(long, global = true)]
     json: bool,
 
@@ -39,7 +39,7 @@ enum Command {
         #[arg(long, short)]
         key: PathBuf,
         /// New or empty output directory.
-        #[arg(long, short, default_value = "receipt")]
+        #[arg(long, short, default_value = "signed-file-list")]
         output: PathBuf,
         /// Sender contact included in the signed file list.
         #[arg(long)]
@@ -68,7 +68,7 @@ enum Command {
     Package {
         /// Folder whose files should be copied.
         source: PathBuf,
-        /// Signed manifest to place beside the files.
+        /// Signed file list (manifest.json) to place beside the files.
         #[arg(long, short)]
         manifest: PathBuf,
         /// Destination directory; it must not already exist.
@@ -216,12 +216,12 @@ fn run_demo() -> Result<(serde_json::Value, String, u8), Error> {
     fs::create_dir_all(source.join("exports"))?;
     fs::create_dir_all(source.join("notes"))?;
     fs::write(
-        source.join("brand/logo-master.ai"),
-        include_bytes!("../examples/client-handoff/brand/logo-master.ai"),
+        source.join("brand/logo-notes.md"),
+        include_bytes!("../examples/client-handoff/brand/logo-notes.md"),
     )?;
     fs::write(
-        source.join("exports/final-cut.mov"),
-        include_bytes!("../examples/client-handoff/exports/final-cut.mov"),
+        source.join("exports/delivery-checklist.txt"),
+        include_bytes!("../examples/client-handoff/exports/delivery-checklist.txt"),
     )?;
     fs::write(
         source.join("notes/approval.txt"),
@@ -237,8 +237,11 @@ fn run_demo() -> Result<(serde_json::Value, String, u8), Error> {
         false,
     )?;
     copy_demo_tree(&source, &received)?;
-    fs::remove_file(received.join("exports/final-cut.mov"))?;
-    fs::write(received.join("brand/logo-master.ai"), b"draft artwork\n")?;
+    fs::remove_file(received.join("exports/delivery-checklist.txt"))?;
+    fs::write(
+        received.join("brand/logo-notes.md"),
+        b"# Project Aurora logo notes\n\nDraft notes; approval pending.\n",
+    )?;
     fs::write(
         received.join("notes/unrequested.txt"),
         b"not in sender list\n",
@@ -258,7 +261,7 @@ fn run_demo() -> Result<(serde_json::Value, String, u8), Error> {
         "unexpected": report.unexpected
     });
     let human = format!(
-        "Demo workspace created at {}\nSigned file list: 3 files\nMISMATCH — the received folder differs\n  MISSING: exports/final-cut.mov\n  CHANGED: brand/logo-master.ai\n  EXTRA: notes/unrequested.txt\nSample data stays in this temporary workspace; your folders were not read or changed.",
+        "Demo workspace created at {}\nSigned file list: 3 files\nMISMATCH — the received folder differs\n  MISSING: exports/delivery-checklist.txt\n  CHANGED: brand/logo-notes.md\n  EXTRA: notes/unrequested.txt\nSample data stays in this temporary workspace; your folders were not read or changed.",
         root.display()
     );
     Ok((value, human, 0))

@@ -49,6 +49,8 @@ test("first screen names the audience and offers one honest sample action at des
       page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
       await page.goto(server.url, { waitUntil: "networkidle" });
       assert.equal(await page.locator("h1").innerText(), "Verify every file in a folder handoff.");
+      assert.equal(await page.title(), "Remote File Handoff Manifest — verify every file");
+      assert.equal(await page.locator('meta[property="og:title"]').getAttribute("content"), "Remote File Handoff Manifest — verify every file");
       assert.match(await page.locator(".lede").innerText(), /freelancers and small teams/);
       assert.equal(await page.getByRole("link", { name: "Try it with sample data" }).getAttribute("href"), "/?demo=1");
       assert.equal(await page.locator(".hero .button.primary").count(), 1);
@@ -102,12 +104,28 @@ test("demo direct links, reset, navigation focus, back focus, and not-found rout
     await page.waitForURL("**/demo/");
     assert.equal(await page.title(), "Demo — Remote File Handoff Manifest");
     assert.equal(await page.getByText("Demo — sample data, nothing is saved").count(), 1);
+    await page.locator(".demo-result-details").getByText("notes/unrequested.txt").waitFor();
+    for (const selector of ["#demo-recording", ".demo-result-details li"]) {
+      const intersectsViewport = await page.locator(selector).first().evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return box.bottom > 0 && box.top < window.innerHeight;
+      });
+      assert.equal(intersectsViewport, true, `${selector} should be visible without scrolling`);
+    }
     await page.screenshot({ path: join(artifacts, "demo-mobile.png"), fullPage: true });
-    await page.getByRole("link", { name: "Privacy", exact: true }).first().click();
+    await page.getByRole("button", { name: "Reset demo" }).click();
+    await page.locator(".demo-result-details").getByText("notes/unrequested.txt").waitFor();
+    await page.goto(`${server.url}/#how`);
+    await page.locator("#how").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 137));
+    const priorScroll = await page.evaluate(() => window.scrollY);
+    assert.equal(priorScroll > 0, true);
+    await page.evaluate(() => document.querySelector('.site-header a[href="/privacy/"]').click());
     await page.waitForURL("**/privacy/");
     assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("h1")), true);
-    await page.goBack();
-    assert.equal(await page.evaluate(() => document.activeElement === document.querySelector("h1")), true);
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => document.activeElement === document.querySelector("h1"));
+    await page.waitForFunction((expected) => Math.abs(window.scrollY - expected) < 8, priorScroll);
     const missing = await page.goto(`${server.url}/definitely-missing-review-1`);
     assert.equal(missing?.status(), 404);
     assert.equal(await page.locator("h1").innerText(), "This handoff path is missing.");
@@ -128,7 +146,7 @@ test("production service worker controls home and demo offline", async () => {
     assert.equal(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)), true);
     await context.setOffline(true);
     assert.equal((await page.reload({ waitUntil: "domcontentloaded" }))?.ok(), true);
-    assert.match(await page.locator("h1").innerText(), /sample handoff/);
+    assert.match(await page.locator("h1").innerText(), /sample folder handoff/);
   } finally { await browser.close(); await server.close(); }
 });
 

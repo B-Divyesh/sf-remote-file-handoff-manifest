@@ -60,7 +60,12 @@ describe("public claim contract", () => {
     run(["keygen", "-o", join(root, "sender.key")]);
     run(["create", source, "-k", join(root, "sender.key"), "-o", join(root, "list")]);
     const manifest = JSON.parse(readFileSync(join(root, "list/manifest.json"), "utf8"));
+    const html = readFileSync(join(root, "list/manifest.html"), "utf8");
     expect(statSync(join(root, "list/manifest.html")).isFile()).toBe(true);
+    expect(html).toMatch(/SIGNED FILE LIST/);
+    expect(html).toMatch(/Folder handoff signed file list/);
+    expect(html).toMatch(/Signed file list ID/);
+    expect(html).not.toMatch(/SIGNED \/\/ RECEIPT|File handoff manifest|This receipt|<dt>Manifest<\/dt>|<h2>Inventory<\/h2>/);
     expect(manifest.payload.files.map((file: { path: string }) => file.path)).toEqual(["alpha.txt", "beta.txt"]);
     expect(manifest.payload.files[0]).toEqual({ path: "alpha.txt", size: 6, sha256: createHash("sha256").update("alpha\n").digest("hex") });
     mkdirSync(join(root, "received"));
@@ -116,12 +121,21 @@ describe("public claim contract", () => {
   });
 
   it("@claim:isolated-demo opens in one click, shows exact sample paths, and leaves real storage unchanged", async () => {
+    const bundledFiles = [
+      "examples/client-handoff/brand/logo-notes.md",
+      "examples/client-handoff/exports/delivery-checklist.txt",
+      "examples/client-handoff/notes/approval.txt",
+    ];
+    for (const file of bundledFiles) {
+      expect(readFileSync(resolve(file), "utf8").trim().length).toBeGreaterThan(40);
+      expect(file).toMatch(/\.(md|txt)$/);
+    }
     const root = mkdtempSync(join(tmpdir(), "handoff-demo-claim-"));
     writeFileSync(join(root, "real-data.txt"), "keep me");
     const cli = run(["demo"], { cwd: root });
     expect(cli.stdout).toMatch(/temporary workspace/);
-    expect(cli.stdout).toMatch(/MISSING: exports\/final-cut\.mov/);
-    expect(cli.stdout).toMatch(/CHANGED: brand\/logo-master\.ai/);
+    expect(cli.stdout).toMatch(/MISSING: exports\/delivery-checklist\.txt/);
+    expect(cli.stdout).toMatch(/CHANGED: brand\/logo-notes\.md/);
     expect(cli.stdout).toMatch(/EXTRA: notes\/unrequested\.txt/);
     expect(readFileSync(join(root, "real-data.txt"), "utf8")).toBe("keep me");
     expect(readdirSync(root)).toEqual(["real-data.txt"]);
@@ -133,7 +147,7 @@ describe("public claim contract", () => {
     await expect.poll(() => page.url()).toBe(`${origin}/demo/`);
     await expect.poll(() => page.locator("#demo-result h2").textContent(), { timeout: 4_000 }).toBe("The handoff does not match");
     expect(await page.getByText("Demo — sample data, nothing is saved").count()).toBe(1);
-    expect(await page.locator(".demo-result-details").innerText()).toMatch(/exports\/final-cut\.mov[\s\S]*brand\/logo-master\.ai[\s\S]*notes\/unrequested\.txt/);
+    expect(await page.locator(".demo-result-details").innerText()).toMatch(/exports\/delivery-checklist\.txt[\s\S]*brand\/logo-notes\.md[\s\S]*notes\/unrequested\.txt/);
     expect(await page.evaluate(() => localStorage.getItem("real:marker"))).toBe("keep");
     await page.getByRole("button", { name: "Reset demo" }).click();
     await expect.poll(() => page.locator("#demo-result h2").textContent(), { timeout: 4_000 }).toBe("The handoff does not match");

@@ -11,13 +11,13 @@
 //! create_manifest(
 //!     Path::new("deliverables"),
 //!     Path::new("sender.key"),
-//!     Path::new("receipt"),
+//!     Path::new("signed-file-list"),
 //!     None,
 //!     None,
 //!     false,
 //! )?;
 //! let result = verify_manifest(
-//!     Path::new("receipt/manifest.json"),
+//!     Path::new("signed-file-list/manifest.json"),
 //!     Path::new("deliverables"),
 //!     Path::new("sender.pub"),
 //!     false,
@@ -183,7 +183,7 @@ pub fn create_manifest(
     encrypt: bool,
 ) -> Result<CreateReport> {
     ensure_directory(source, "source")?;
-    ensure_output_outside_source(source, output, "receipt")?;
+    ensure_output_outside_source(source, output, "signed file list")?;
     if let Some(value) = &expires {
         DateTime::parse_from_rfc3339(value).map_err(|_| {
             Error::Message("--expires must be RFC 3339, for example 2026-12-31T23:59:59Z".into())
@@ -269,13 +269,13 @@ pub fn verify_manifest(
         bytes
     };
     let manifest: Manifest = serde_json::from_slice(&plaintext)
-        .map_err(|error| Error::Message(format!("manifest is not valid JSON: {error}")))?;
+        .map_err(|error| Error::Message(format!("manifest.json is not valid JSON: {error}")))?;
     validate_payload(&manifest.payload)?;
     let verifying = read_verifying_key(public_key_path)?;
     let embedded = decode_key::<32>(&manifest.payload.signer_public_key, "embedded public key")?;
     if verifying.to_bytes() != embedded {
         return Err(Error::Message(
-            "manifest signer does not match the supplied public key".into(),
+            "signed file list does not match the supplied public key".into(),
         ));
     }
     let signature_bytes = decode_key::<64>(&manifest.signature, "manifest signature")?;
@@ -283,7 +283,7 @@ pub fn verify_manifest(
     let signed_bytes = serde_json::to_vec(&manifest.payload)?;
     verifying
         .verify(&signed_bytes, &signature)
-        .map_err(|_| Error::Message("manifest signature is invalid".into()))?;
+        .map_err(|_| Error::Message("signed file list signature is invalid".into()))?;
 
     let actual = scan_directory(source)?
         .into_iter()
@@ -357,14 +357,14 @@ pub fn package(source: &Path, manifest: &Path, output: &Path) -> Result<PackageR
     let signer_path = receipt_dir.join("signer.pub");
     if !signer_path.is_file() {
         return Err(Error::Message(format!(
-            "receipt is missing its signer.pub file: {}",
+            "signed file list is missing its signer.pub file: {}",
             signer_path.display()
         )));
     }
     let verification = verify_manifest(manifest, source, &signer_path, false)?;
     if !verification.clean() {
         return Err(Error::Message(format!(
-            "source does not match the receipt ({} missing, {} altered, {} unexpected, expired: {})",
+            "source does not match the signed file list ({} missing, {} altered, {} unexpected, expired: {})",
             verification.missing.len(),
             verification.altered.len(),
             verification.unexpected.len(),
@@ -639,7 +639,9 @@ fn random_id() -> String {
 
 fn passphrase() -> Result<SecretString> {
     let value = std::env::var("RFHM_PASSPHRASE").map_err(|_| {
-        Error::Message("encrypted manifests require RFHM_PASSPHRASE in the environment".into())
+        Error::Message(
+            "encrypted signed file lists require RFHM_PASSPHRASE in the environment".into(),
+        )
     })?;
     if value.chars().count() < 12 {
         return Err(Error::Message(
@@ -663,16 +665,21 @@ fn encrypt_bytes(plaintext: &[u8], passphrase: &SecretString) -> Result<Vec<u8>>
 }
 
 fn decrypt_bytes(ciphertext: &[u8], passphrase: &SecretString) -> Result<Vec<u8>> {
-    let decryptor = age::Decryptor::new(ciphertext)
-        .map_err(|error| Error::Message(format!("could not read encrypted manifest: {error}")))?;
+    let decryptor = age::Decryptor::new(ciphertext).map_err(|error| {
+        Error::Message(format!(
+            "could not read encrypted signed file list: {error}"
+        ))
+    })?;
     let identity = age::scrypt::Identity::new(passphrase.clone());
     let mut reader = decryptor
         .decrypt(std::iter::once(&identity as &dyn age::Identity))
-        .map_err(|_| Error::Message("could not decrypt manifest; check RFHM_PASSPHRASE".into()))?;
+        .map_err(|_| {
+            Error::Message("could not decrypt signed file list; check RFHM_PASSPHRASE".into())
+        })?;
     let mut plaintext = Vec::new();
-    reader
-        .read_to_end(&mut plaintext)
-        .map_err(|_| Error::Message("could not decrypt manifest; check RFHM_PASSPHRASE".into()))?;
+    reader.read_to_end(&mut plaintext).map_err(|_| {
+        Error::Message("could not decrypt signed file list; check RFHM_PASSPHRASE".into())
+    })?;
     Ok(plaintext)
 }
 
@@ -705,7 +712,7 @@ fn write_new_private(path: &Path, bytes: &[u8]) -> Result<()> {
 fn refuse_overwrite(paths: &[&Path]) -> Result<()> {
     if let Some(path) = paths.iter().find(|path| path.exists()) {
         return Err(Error::Message(format!(
-            "refusing to overwrite existing receipt: {}",
+            "refusing to overwrite existing signed file list: {}",
             path.display()
         )));
     }
@@ -742,7 +749,7 @@ fn render_html(manifest: &Manifest) -> String {
         .map(escape_html)
         .unwrap_or_else(|| "No expiry".into());
     format!(
-        r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Handoff receipt · {id}</title><style>:root{{color-scheme:dark;--bg:#080b12;--surface:#101724;--line:#344460;--text:#f4f7e8;--muted:#aab4c5;--lime:#c8ff3d;--cyan:#5ee7f2}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,sans-serif}}main{{width:min(1120px,calc(100% - 32px));margin:48px auto}}h1,h2{{font-family:ui-monospace,monospace}}h1{{font-size:clamp(2rem,6vw,4rem);line-height:1}}.signal{{color:var(--lime);letter-spacing:.15em}}dl{{display:grid;grid-template-columns:max-content 1fr;gap:8px 24px;padding:24px;background:var(--surface);border-left:4px solid var(--cyan)}}dt{{color:var(--muted)}}dd{{margin:0;overflow-wrap:anywhere}}.table-wrap{{overflow:auto}}table{{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}}th,td{{padding:12px;text-align:left;border-bottom:1px solid var(--line)}}th{{color:var(--cyan)}}code{{font-size:.78rem;overflow-wrap:anywhere}}.empty{{color:var(--muted);text-align:center;padding:48px}}footer{{margin-top:48px;color:var(--muted)}}@media(max-width:600px){{main{{margin:24px auto}}dl{{grid-template-columns:1fr;gap:2px}}dd{{margin-bottom:12px}}}}</style></head><body><main><p class="signal">SIGNED // RECEIPT</p><h1>File handoff manifest</h1><p>This receipt describes the sender's folder. Verify the JSON manifest and received files with <code>handoff verify</code>; this page alone is not proof that transport completed.</p><dl><dt>Manifest</dt><dd>{id}</dd><dt>Created</dt><dd>{created}</dd><dt>Expires</dt><dd>{expires}</dd><dt>Contact</dt><dd>{contact}</dd><dt>Files</dt><dd>{count}</dd><dt>Total bytes</dt><dd>{bytes}</dd><dt>Signature</dt><dd>Ed25519 · {signature}</dd></dl><h2>Inventory</h2><div class="table-wrap"><table><thead><tr><th scope="col">Relative path</th><th scope="col">Bytes</th><th scope="col">SHA-256</th></tr></thead><tbody>{rows}</tbody></table></div><footer>Remote File Handoff Manifest format v1 · No data was uploaded to create this receipt.</footer></main></body></html>"#,
+        r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed file list · {id}</title><style>:root{{color-scheme:dark;--bg:#080b12;--surface:#101724;--line:#344460;--text:#f4f7e8;--muted:#aab4c5;--lime:#c8ff3d;--cyan:#5ee7f2}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,sans-serif}}main{{width:min(1120px,calc(100% - 32px));margin:48px auto}}h1,h2{{font-family:ui-monospace,monospace}}h1{{font-size:clamp(2rem,6vw,4rem);line-height:1}}.signal{{color:var(--lime);letter-spacing:.15em}}dl{{display:grid;grid-template-columns:max-content 1fr;gap:8px 24px;padding:24px;background:var(--surface);border-left:4px solid var(--cyan)}}dt{{color:var(--muted)}}dd{{margin:0;overflow-wrap:anywhere}}.table-wrap{{overflow:auto}}table{{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}}th,td{{padding:12px;text-align:left;border-bottom:1px solid var(--line)}}th{{color:var(--cyan)}}code{{font-size:.78rem;overflow-wrap:anywhere}}.empty{{color:var(--muted);text-align:center;padding:48px}}footer{{margin-top:48px;color:var(--muted)}}@media(max-width:600px){{main{{margin:24px auto}}dl{{grid-template-columns:1fr;gap:2px}}dd{{margin-bottom:12px}}}}</style></head><body><main><p class="signal">SIGNED FILE LIST</p><h1>Folder handoff signed file list</h1><p>This signed file list describes the sender's folder. Verify <code>manifest.json</code> and the received files with <code>handoff verify</code>. This page alone does not prove delivery.</p><dl><dt>Signed file list ID</dt><dd>{id}</dd><dt>Created</dt><dd>{created}</dd><dt>Expires</dt><dd>{expires}</dd><dt>Contact</dt><dd>{contact}</dd><dt>Files</dt><dd>{count}</dd><dt>Total bytes</dt><dd>{bytes}</dd><dt>Signature</dt><dd>Ed25519 · {signature}</dd></dl><h2>Files</h2><div class="table-wrap"><table><thead><tr><th scope="col">Relative path</th><th scope="col">Bytes</th><th scope="col">SHA-256</th></tr></thead><tbody>{rows}</tbody></table></div><footer>Signed file list format v1 · No data was uploaded to create this file list.</footer></main></body></html>"#,
         id = escape_html(&payload.manifest_id),
         created = escape_html(&payload.created_at),
         expires = expires,
@@ -774,7 +781,7 @@ mod tests {
     }
 
     #[test]
-    fn escapes_receipt_values() {
+    fn escapes_signed_file_list_values() {
         assert_eq!(escape_html("<x>&\""), "&lt;x&gt;&amp;&quot;");
     }
 }

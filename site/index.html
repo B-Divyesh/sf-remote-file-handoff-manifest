@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#080b12" />
     <meta name="description" content="Create a signed file list, then find missing, changed, and extra files in a folder handoff." />
-    <title>Handoff — verify every file in a folder</title>
+    <title>Remote File Handoff Manifest — verify every file</title>
     <link rel="canonical" href="https://remote-file-handoff-manifest.sociobot.in/" />
-    <meta property="og:type" content="website" /><meta property="og:title" content="Handoff — verify every file in a folder" />
+    <meta property="og:type" content="website" /><meta property="og:title" content="Remote File Handoff Manifest — verify every file" />
     <meta property="og:description" content="Create a signed file list, then find missing, changed, and extra files in a folder handoff." />
     <meta property="og:url" content="https://remote-file-handoff-manifest.sociobot.in/" /><meta property="og:image" content="https://remote-file-handoff-manifest.sociobot.in/social-card.png" />
-    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Handoff — verify every file in a folder" /><meta name="twitter:description" content="Find missing, changed, and extra files in a folder handoff." /><meta name="twitter:image" content="https://remote-file-handoff-manifest.sociobot.in/social-card.png" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Remote File Handoff Manifest — verify every file" /><meta name="twitter:description" content="Find missing, changed, and extra files in a folder handoff." /><meta name="twitter:image" content="https://remote-file-handoff-manifest.sociobot.in/social-card.png" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" /><link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
@@ -29,7 +29,7 @@
           <p class="lede">For freelancers and small teams sending private folders, show recipients exactly what is missing or changed.</p>
           <div class="hero-actions">
             <a class="button primary" href="/?demo=1">Try it with sample data</a>
-            <span class="action-note">Opens a failed handoff with realistic files and exact mismatch paths.</span>
+            <span class="action-note">Opens a failed handoff with exact missing, changed, and extra paths.</span>
           </div>
           <ul class="plain-facts" aria-label="Product facts"><li>Free under the MIT License</li><li>Selected files stay in your browser</li><li>Reopens offline after the first visit</li></ul>
         </div>
@@ -46,12 +46,12 @@
         <div class="section-heading"><p class="eyebrow">01 / SEND AND CHECK</p><h2 id="how-title">How to verify a folder handoff</h2></div>
         <ol class="tracks">
           <li><span class="track-number">01</span><div><h3>Sign the file list</h3><p>The sender records each path, size, and SHA-256 hash. Their Ed25519 key signs the ordered list.</p></div><code tabindex="0">handoff create ./final -k sender.key</code></li>
-          <li><span class="track-number">02</span><div><h3>Send the folder</h3><p>Send the folder and signed file list with your usual transfer tool.</p></div><code tabindex="0">handoff package ./final -m receipt/manifest.json -o package</code></li>
+          <li><span class="track-number">02</span><div><h3>Send the folder</h3><p>Send the folder and signed file list with your usual transfer tool.</p></div><code tabindex="0">handoff package ./final -m signed-file-list/manifest.json -o package</code></li>
           <li><span class="track-number">03</span><div><h3>Verify the received folder</h3><p>The recipient sees the exact missing, changed, and extra paths.</p></div><code tabindex="0">handoff verify manifest.json ./files -p sender.pub</code></li>
         </ol>
       </section>
       <section class="install section" id="install" aria-labelledby="install-title">
-        <div class="section-heading"><p class="eyebrow">02 / INSTALL</p><h2 id="install-title">Install the command-line tool</h2><p>Build one Rust binary. Use JSON output in scripts.</p></div>
+        <div class="section-heading"><p class="eyebrow">02 / INSTALL</p><h2 id="install-title">Install the command-line tool</h2><p>Install one command-line tool. Use JSON output in scripts.</p></div>
         <div class="terminal" aria-label="Installation commands"><div class="terminal-bar"><span></span><span></span><span></span><b>~/handoff</b></div><pre tabindex="0"><code id="install-command"><span class="prompt">$</span> git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
 <span class="prompt">$</span> cd sf-remote-file-handoff-manifest
 <span class="prompt">$</span> cargo install --path .
@@ -73,7 +73,7 @@
       </section>
       <section class="private section" aria-labelledby="private-title"><div><p class="eyebrow">04 / PROTECT NAMES</p><h2 id="private-title">Protect filenames in signed file lists</h2></div><div><p>Set <code>RFHM_PASSPHRASE</code> and add <code>--encrypt</code>. The tool encrypts the JSON and HTML outputs; source files do not change.</p><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest#encrypt-file-names">Read the security notes on GitHub (external) <span aria-hidden="true">→</span></a></div></section>
     </main>
-    <footer class="site-footer"><p><span class="brand-mark" aria-hidden="true">▣</span> Remote File Handoff Manifest</p><p>Check a received folder against a sender’s signed file list.</p><nav aria-label="Legal and project links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest">Source on GitHub (external)</a><a href="https://sociobot.in/">Built by Param Factory (external)</a></nav><small>Version 0.1.0 · build 6173552-p1</small></footer>
+    <footer class="site-footer"><p><span class="brand-mark" aria-hidden="true">▣</span> Remote File Handoff Manifest</p><p>Check a received folder against a sender’s signed file list.</p><nav aria-label="Legal and project links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-remote-file-handoff-manifest">Source on GitHub (external)</a><a href="https://sociobot.in/">Built by Param Factory (external)</a></nav><small>Version 0.1.0 · build 7d48dec-p2</small></footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

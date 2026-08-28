@@ -11,11 +11,11 @@ Try the isolated sample at [the web demo](https://remote-file-handoff-manifest.s
 cargo run -- demo
 ```
 
-The CLI demo uses the files in `examples/client-handoff/`. It creates a separate temporary workspace and prints its path.
+The command-line demo uses the files in `examples/client-handoff/`. It creates a separate temporary workspace and prints its path.
 
 ## Install
 
-Build the single command-line binary:
+Install the command-line tool from source:
 
 ```sh
 git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
@@ -51,8 +51,8 @@ Send that directory with your usual transfer tool. On the recipient’s machine,
 handoff verify ./package/manifest.json ./package/files --public-key ./package/signer.pub
 ```
 
-Add `--json` before a subcommand for machine-readable output. Clean checks exit `0`. File differences exit `3`.
-Signature or decryption failures exit `4`. Operational failures exit `1`. Invalid command usage exits `2`.
+Add `--json` before a command to print JSON for scripts. Clean checks exit `0`. File differences exit `3`.
+Signature or decryption failures exit `4`. File and system errors exit `1`. Invalid command usage exits `2`.
 
 ## Encrypt file names
 

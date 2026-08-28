@@ -49,3 +49,5 @@ Transitions are 160–240 ms and limited to opacity and transform. The verificat
 ## Polish continuity
 
 Round 1 retains the dark pixel/demoscene direction. The persistent demo banner uses a subdued phosphor rack tone, while the recorded CLI and mismatch scope reuse the existing terminal grammar. Mobile navigation keeps Demo and Privacy visible; dense workflow decoration stacks below the first-screen task.
+
+Round 2 compresses the mobile demo into a single checksum-scope view: command output and all three mismatch paths fit beneath the persistent banner at 390 × 844. The original grid, hard edges, phosphor/cyan/coral signals, and terminal type remain unchanged. The tighter composition removes repeat explanation instead of adding generic cards or new decoration.

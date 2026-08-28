@@ -1,0 +1,6 @@
+Project Aurora delivery checklist
+
+[x] Logo notes approved
+[x] Homepage copy approved
+[x] Accessibility review complete
+[x] Client sign-off recorded

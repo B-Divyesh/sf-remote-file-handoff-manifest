@@ -122,8 +122,8 @@ if (import.meta.env.PROD) {
 const demoLines = [
   "Signed file list: 3 files",
   "MISMATCH — the received folder differs",
-  "MISSING: exports/final-cut.mov",
-  "CHANGED: brand/logo-master.ai",
+  "MISSING: exports/delivery-checklist.txt",
+  "CHANGED: brand/logo-notes.md",
   "EXTRA: notes/unrequested.txt",
 ];
 let demoTimers: number[] = [];
@@ -155,8 +155,8 @@ function resetAndRunDemo(): void {
       const list = document.createElement("ul");
       list.className = "result-list";
       for (const [label, path, state] of [
-        ["Missing", "exports/final-cut.mov", "bad"],
-        ["Changed", "brand/logo-master.ai", "bad"],
+        ["Missing", "exports/delivery-checklist.txt", "bad"],
+        ["Changed", "brand/logo-notes.md", "bad"],
         ["Extra", "notes/unrequested.txt", "warn"],
       ]) {
         const item = document.createElement("li");
@@ -191,7 +191,7 @@ window.addEventListener("pageshow", () => {
   if (sessionStorage.getItem("handoff:focus-route") !== "1") return;
   sessionStorage.removeItem("handoff:focus-route");
   const heading = document.querySelector<HTMLElement>("main h1");
-  heading?.focus();
+  heading?.focus({ preventScroll: true });
   const status = document.querySelector<HTMLElement>("#route-status");
   if (status && heading) status.textContent = heading.textContent ?? document.title;
 });

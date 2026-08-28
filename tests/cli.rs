@@ -65,7 +65,7 @@ fn documented_round_trip_and_exact_mismatch() {
 }
 
 #[test]
-fn empty_folder_and_encrypted_receipt_work() {
+fn empty_folder_and_encrypted_signed_file_list_work() {
     let temp = tempdir().unwrap();
     let source = temp.path().join("empty");
     let key = temp.path().join("sender.key");
@@ -146,7 +146,7 @@ fn ten_thousand_files_reports_only_the_changed_path() {
 }
 
 #[test]
-fn package_copies_files_and_receipts_without_overwriting() {
+fn package_copies_files_and_signed_outputs_without_overwriting() {
     let temp = tempdir().unwrap();
     let source = temp.path().join("source");
     let key = temp.path().join("sender.key");
