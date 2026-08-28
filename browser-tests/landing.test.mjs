@@ -53,6 +53,7 @@ test("production landing page keeps command scrollers keyboard-accessible and is
     await page.goto(server.url, { waitUntil: "networkidle" });
     const scrollers = page.locator(".tracks code, .terminal pre");
     assert.equal(await scrollers.count(), 4);
+    assert.equal(await page.locator(".tracks code").nth(2).innerText(), "handoff verify manifest.json ./files -p sender.pub");
     for (let index = 0; index < await scrollers.count(); index += 1) {
       const scroller = scrollers.nth(index);
       await expectFocusableScroller(scroller);
