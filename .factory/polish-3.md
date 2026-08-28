@@ -1,6 +1,6 @@
 # Polish round 3 — cumulative finding closure
 
-Repair source commit: `6205b12`. Final commit and live evidence are recorded in `.factory/handoff.md` after deployment. Evidence aliases: `B-FIRST` = mobile/desktop cold-first-screen browser test; `B-ROUTES` = route/metadata/targets/Axe browser test; `B-NAV` = demo/reset/real-click Back/focus/404 browser test; `B-OFFLINE` = service-worker/offline browser test; `C:<id>` = the sole registered claim test. Screenshots: `artifacts/home-mobile.png`, `artifacts/home-desktop.png`, `artifacts/demo-mobile.png`, `artifacts/not-found-mobile.png`.
+Repair source commit: `6205b12`; deployed commit: `563645f99dff336ce8c3dc65889c95da25def796`. Evidence aliases: `B-FIRST` = mobile/desktop cold-first-screen browser test; `B-ROUTES` = route/metadata/targets/Axe browser test; `B-NAV` = demo/reset/real-click Back/focus/404 browser test; `B-OFFLINE` = service-worker/offline browser test; `C:<id>` = the sole registered claim test. Local screenshots: `artifacts/home-mobile.png`, `artifacts/home-desktop.png`, `artifacts/demo-mobile.png`, `artifacts/not-found-mobile.png`. Cold live screenshots: `artifacts/live-polish-3/home-mobile.png`, `artifacts/live-polish-3/demo-mobile.png`, and `artifacts/live-polish-3/not-found-mobile.png`.
 
 ## Current review 3
 
@@ -87,6 +87,8 @@ Repair source commit: `6205b12`. Final commit and live evidence are recorded in 
 
 ## Final evidence
 
-- Local: `npm test`, `npm run build`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo build --release`, and `cargo package --allow-dirty` pass.
-- Final clean-clone claim evidence and post-deployment cold checks, including exact commit and live URLs, are in `.factory/handoff.md`.
+- Clean clone `/tmp/rfhm-polish3-clean-azHvin/repo` at `563645f` passed every one of the 11 exact `claims.json` commands separately, then passed `npm test`, `npm run build`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo build --release`, and `cargo package --allow-dirty`.
+- Work-order static deployment rebuilt `dist/site` and published `563645f` to `https://remote-file-handoff-manifest.sociobot.in`. Cold mobile live checks are in `artifacts/live-polish-3/live-check.json`: Back returned from Privacy at y=1225 after leaving y=1232; demo replay ended as “Replay sample check”; all live routes had the expected status/metadata and zero serious/critical Axe findings. The only captured 404 console message is the expected failed request for that 404 response.
+- `/opt/fleet/lib/verify-url.sh` wrote `title`, `lang=en`, one h1/main, zero missing image alt values, and zero console/page errors to `/work/.evidence/live-polish-3/verify-url/verify.json`. Live demo isolation/offline evidence is `/work/.evidence/live-polish-3/demo-offline.json`.
+- Lighthouse mobile is in `artifacts/live-polish-3/lighthouse.json`: Performance 100, Accessibility 100, Best Practices 100, SEO 100, FCP 0.89 s, LCP 1.05 s, TBT 0 ms, CLS 0.
 - No AI feature was added: local hashing and signature verification have no meaningful AI step, and package/JSON output cover the relevant export workflow.

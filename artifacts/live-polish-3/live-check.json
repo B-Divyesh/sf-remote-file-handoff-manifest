@@ -1,0 +1,25 @@
+{
+  "base": "https://remote-file-handoff-manifest.sociobot.in",
+  "checks": [
+    "cold first screen",
+    "isolated demo replay",
+    {
+      "backScroll": {
+        "priorScroll": 1232,
+        "restored": 1225
+      }
+    },
+    "live routes, metadata, 404, and axe"
+  ],
+  "validRouteErrors": [],
+  "expected404ConsoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "axes": {
+    "/": [],
+    "/demo/": [],
+    "/privacy/": [],
+    "/terms/": [],
+    "/missing-polish-3": []
+  }
+}
