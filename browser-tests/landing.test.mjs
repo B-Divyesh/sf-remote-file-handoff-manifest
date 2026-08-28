@@ -141,4 +141,6 @@ test("deployment configuration has security headers, immutable assets, and a rea
   assert.equal(config.routes.find((entry) => entry.route === "/sw.js")?.headers?.["Cache-Control"], "no-cache, no-store, must-revalidate");
   assert.deepEqual(config.routes.at(-1), { route: "/*", statusCode: 404 });
   assert.deepEqual(config.responseOverrides["404"], { rewrite: "/404.html" });
+  const serviceWorker = await readFile(join(dist, "sw.js"), "utf8");
+  assert.doesNotMatch(serviceWorker, /\/demo\/index\.html|\/privacy\/index\.html|\/404\.html/);
 });

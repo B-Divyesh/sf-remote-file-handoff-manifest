@@ -15,7 +15,7 @@ function serviceWorker(): Plugin {
     },
     closeBundle() {
       const files = listOutputFiles(outputDirectory)
-        .filter((file) => file !== "sw.js" && file !== "staticwebapp.config.json")
+        .filter((file) => file !== "sw.js" && file !== "staticwebapp.config.json" && !file.endsWith(".html"))
         .sort();
       const shell = [...new Set([...files.map((file) => `/${file}`), "/", "/demo/", "/privacy/", "/terms/"])].sort();
       const versionHash = createHash("sha256");
