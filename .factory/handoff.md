@@ -43,7 +43,7 @@ Results:
 
 Clean-clone claim run:
 
-- Clone: `/tmp/rfhm-clean-b7Bxng/repo` from `3b60be5`.
+- Final clean clone: `/tmp/rfhm-final-LdULZg/repo` from pushed commit `e60ab4c`.
 - Ran every `test` command in `.factory/claims.json`.
 - Result: all 11 passed. Every test creates a fresh temp directory or browser context.
 

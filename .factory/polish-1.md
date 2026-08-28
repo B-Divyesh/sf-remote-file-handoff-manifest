@@ -16,7 +16,7 @@ Evidence keys:
 | Finding | Change made | Evidence and live check |
 | --- | --- | --- |
 | B1 | Added first-screen `/?demo=1`, real `/demo/`, persistent banner, reset/start actions, automatically run sample recording, bundled Project Aurora files, and `handoff demo` in a new OS temp directory. Added `.factory/demo.md`. | `C:isolated-demo`, `B-NAV`; `artifacts/demo-mobile.png`, `artifacts/live-demo-mobile.png`; live `/?demo=1` reached `/demo/`, kept `real:cold-marker`, reset, and showed three exact paths. |
-| B2 | Added `.factory/claims.json` with 11 public claims and exactly one tagged observable test per claim. Removed or narrowed unsupported language. | Every registry command passed from clean clone `/tmp/rfhm-clean-b7Bxng/repo`; claim-specific evidence appears below; live copy was cross-checked on all routes. |
+| B2 | Added `.factory/claims.json` with 11 public claims and exactly one tagged observable test per claim. Removed or narrowed unsupported language. | Every registry command passed from final clean clone `/tmp/rfhm-final-LdULZg/repo`; claim-specific evidence appears below; live copy was cross-checked on all routes. |
 | B3 | Added a styled `404.html`, Azure 404 response override, explicit real routes, and direct-load tests. | `B-NAV`; `artifacts/not-found-mobile.png`; live `/definitely-missing-polish-1` returned HTTP 404 with “This handoff path is missing.” |
 | B4 | Replaced the first screen with a seven-word job headline, named freelancers and small teams, and made sample data the only primary action with its result explained. | `B-FIRST`; `artifacts/home-mobile.png`, `artifacts/home-desktop.png`; live cold read matched the new copy and one primary action. |
 | H1 | Added unique titles/descriptions, canonicals, OG/Twitter metadata, SVG favicon, 180 px touch icon, and original 1200×630 social card on every route. | `B-ROUTES`, `page accessibility shell`; screenshots above; all live page and image URLs returned 200. |
@@ -82,7 +82,7 @@ Evidence keys:
 
 ## Final verification
 
-- Clean clone: `/tmp/rfhm-clean-b7Bxng/repo`; every `claims.json` command passed.
+- Final clean clone: `/tmp/rfhm-final-LdULZg/repo` from pushed commit `e60ab4c`; every `claims.json` command passed.
 - Full local: `npm test`, `npm run build`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo build --release`, and `cargo package --allow-dirty` passed.
 - Lighthouse production build: Performance 100, Accessibility 100, FCP 1.0 s, LCP 1.2 s, TBT 0 ms, CLS 0.
 - Live cold check: first screen, demo/isolation/reset, focus/back, 404, axe, console, offline reload, headers, and link crawl passed.
