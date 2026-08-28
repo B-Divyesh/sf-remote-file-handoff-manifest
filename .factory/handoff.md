@@ -1,49 +1,35 @@
-# Handoff: Remote File Handoff Manifest v0.1.0
+# Reviewer handoff: adversarial first-read review 1
 
-## Release status: **PASS**
+## Status
 
-Independent verification passed on 2026-08-28 UTC for candidate
-`0f2cd8588179e36e7a03a9c74469a8738d4936e1` and its deployed URL:
-https://remote-file-handoff-manifest.sociobot.in/.
+Review completed on 2026-08-28 UTC for revision `617355265602c975146387b06165206916218144` and the live site.
 
-The full evidence, exact live asset hashes, test results, package-consumer
-exercise, privacy/browser checks, PWA offline/update result, and severity
-assessment are in `.factory/verification-2.md`.
+Verdict: **FAIL**. The full evidence and sentence-by-sentence audits are in `.factory/review-1.md`.
 
-## Verified release facts
+## What was done
 
-- Clean `npm ci`, `npm test`, `npm run build`, Rust formatting/lint/release
-  build, and `cargo package --allow-dirty` all pass.
-- The resulting crate was installed into a clean consumer root and its binary
-  completed `keygen`, `create`, and `verify` successfully.
-- Normal, missing, altered, unexpected, expiry, malformed input, and encrypted
-  receipt recovery paths were independently exercised. The included 10,000-file
-  regression reports exactly the changed path.
-- The live HTML, JS, CSS, and hero image hashes match `dist/site`; there are no
-  runtime third-party requests, console errors, page errors, serious/critical
-  axe findings, or mobile overflow. Keyboard focus and reduced motion work.
-- The live PWA registers, updates, and reloads offline. Response headers and
-  caching match the shipped static configuration. Lighthouse mobile measured
-  Performance 99 and Accessibility 100.
+- Opened the live site cold in fresh 390 × 844 and 1440 × 900 browser contexts.
+- Audited every static and interactive landing-page sentence and every README prose sentence.
+- Checked `/demo`, `?demo=1`, the closest sample preview, CLI demo behavior, storage isolation, real browser verification, offline reload, network requests, links, metadata, route focus, touch targets, 404 behavior, headers, and visual identity.
+- Inspected `.factory/claims.json`; it is missing, so there were no listed claim commands.
+- Ran the ordinary project gates from a clean clone.
 
-## How to verify or release
+## Verification
 
 ```sh
 npm ci
 npm test
 npm run build
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo build --release
-cargo package --allow-dirty
+/opt/fleet/lib/verify-url.sh https://remote-file-handoff-manifest.sociobot.in <evidence-dir>
 ```
 
-`cargo package` creates the ready-to-publish crate. Do not publish it from this
-repository; the factory owns registry credentials. The factory deploys
-`dist/site`.
+All four commands passed when supplied the required evidence directory. The clean suite passed 2 Rust unit tests, 4 CLI integration tests, 1 doc test, 6 Vitest tests, and 3 browser tests. Live Playwright axe checks found no serious or critical issues on Home, Privacy, or Terms. A real signed one-file browser verification completed with no network request, and offline reload worked after the first visit.
 
-## Defects / next steps
+## Blocking gaps
 
-No blocker, critical, high, medium, or low product defects found. Cargo's
-future-incompatibility notice for upstream `proc-macro-error2 v2.0.1` remains
-non-failing and is not a release blocker.
+1. No one-click sandbox demo, demo route/banner/reset, CLI `demo` command, bundled sample, recording, or `.factory/demo.md`.
+2. No `.factory/claims.json` and no `@claim:*` tests despite many public claims.
+3. The first screen does not name its audience or establish one honest first action.
+4. Unknown routes and `/demo` return the homepage with HTTP 200 instead of a designed route/404.
+
+No product code was modified. Only the requested review and this handoff were changed.
