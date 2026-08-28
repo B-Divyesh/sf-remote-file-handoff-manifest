@@ -57,17 +57,17 @@
           <li>
             <span class="track-number">01</span>
             <div><h3>Sign the inventory</h3><p>The sender hashes every file and signs the ordered list with an Ed25519 identity.</p></div>
-            <code>handoff create ./final -k sender.key</code>
+            <code tabindex="0" aria-label="Command: create a signed inventory">handoff create ./final -k sender.key</code>
           </li>
           <li>
             <span class="track-number">02</span>
             <div><h3>Move it your way</h3><p>Copy the files and receipt through your existing NAS, SFTP client, drive, or private link.</p></div>
-            <code>handoff package ./final -m receipt/manifest.json -o package</code>
+            <code tabindex="0" aria-label="Command: package the files and receipt">handoff package ./final -m receipt/manifest.json -o package</code>
           </li>
           <li>
             <span class="track-number">03</span>
             <div><h3>Verify what landed</h3><p>The recipient sees exact missing, altered, and unexpected paths—without uploading anything.</p></div>
-            <code>handoff verify manifest.json ./files -p sender.key.pub</code>
+            <code tabindex="0" aria-label="Command: verify the received files">handoff verify manifest.json ./files -p sender.pub</code>
           </li>
         </ol>
       </section>
@@ -80,7 +80,7 @@
         </div>
         <div class="terminal" aria-label="Installation commands">
           <div class="terminal-bar"><span></span><span></span><span></span><b>~/handoff</b></div>
-          <pre><code id="install-command"><span class="prompt">$</span> git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
+          <pre tabindex="0" aria-label="Installation commands. Scroll horizontally to read long commands."><code id="install-command"><span class="prompt">$</span> git clone https://github.com/B-Divyesh/sf-remote-file-handoff-manifest.git
 <span class="prompt">$</span> cd sf-remote-file-handoff-manifest
 <span class="prompt">$</span> cargo install --path .
 <span class="success">✓ handoff 0.1.0 ready</span></code></pre>

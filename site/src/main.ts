@@ -112,6 +112,13 @@ function renderDetails(rows: string[][]): void {
   details.replaceChildren(list);
 }
 
-if (import.meta.env.PROD && "serviceWorker" in navigator && location.protocol !== "file:") {
-  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => undefined));
+function registerServiceWorker(): void {
+  if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+  void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+}
+
+if (import.meta.env.PROD) {
+  // Registration does not depend on page layout. Starting it immediately avoids
+  // missing `load` when a restored or very fast page evaluates this module late.
+  registerServiceWorker();
 }

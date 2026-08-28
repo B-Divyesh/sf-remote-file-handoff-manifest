@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "test": "cargo test && tsc --noEmit && vitest run",
+    "test": "cargo test && tsc --noEmit && vitest run && npm run test:browser",
+    "test:browser": "npm run build:site && node --test --test-concurrency=1 browser-tests/landing.test.mjs",
     "build": "npm run build:site",
     "build:site": "vite build"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "axe-core": "4.10.3",
+    "playwright": "1.58.2",
     "typescript": "^5.9.2",
     "vite": "^7.1.3",
     "vitest": "^3.2.4"

@@ -68,13 +68,19 @@ Version `1` is UTF-8 JSON. The signature is Ed25519 over the exact compact JSON 
 ## Development
 
 ```sh
-npm install
+npm ci
 npm test
 npm run build:site       # writes dist/site
 cargo package --allow-dirty
 ```
 
 Run the landing page locally with `npm run dev`. The browser verifier hashes selected local files in place; files are never uploaded or stored.
+
+`npm test` also builds the production site and runs Chromium coverage for the 390 px mobile accessibility gate, service-worker registration, offline reload, and deployment response policy. The browser version is pinned in `package.json`.
+
+## Deploy
+
+The factory deploys the static output in `dist/site` to `https://remote-file-handoff-manifest.sociobot.in`. `site/public/staticwebapp.config.json` ships with that output and defines the security headers plus immutable caching for hashed assets. Build it with `npm ci && npm run build:site`; do not publish the crate from this repository.
 
 ## Privacy and security
 

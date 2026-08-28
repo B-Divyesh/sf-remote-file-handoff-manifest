@@ -1,25 +1,44 @@
 import { defineConfig, type Plugin } from "vite";
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 function serviceWorker(): Plugin {
+  let outputDirectory = "";
   return {
     name: "rfhm-service-worker",
-    generateBundle(_options, bundle) {
-      const assets = Object.keys(bundle).map((file) => `/${file}`);
-      assets.push("/", "/privacy/", "/terms/", "/relay-hero.webp");
-      const unique = [...new Set(assets)].sort();
-      const version = `rfhm-${createHash("sha256").update(unique.join("\n")).digest("hex").slice(0, 12)}`;
-      this.emitFile({
-        type: "asset",
-        fileName: "sw.js",
-        source: `const CACHE=${JSON.stringify(version)};const SHELL=${JSON.stringify(unique)};self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));self.addEventListener("fetch",event=>{if(event.request.method!=="GET"||new URL(event.request.url).origin!==location.origin)return;event.respondWith(caches.match(event.request).then(hit=>hit||fetch(event.request).then(response=>{if(response.ok){const clone=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,clone));}return response;}).catch(()=>event.request.mode==="navigate"?caches.match("/"):undefined)));});`,
-      });
+    configResolved(config) {
+      outputDirectory = resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      const files = listOutputFiles(outputDirectory)
+        .filter((file) => file !== "sw.js" && file !== "staticwebapp.config.json")
+        .sort();
+      const shell = [...new Set([...files.map((file) => `/${file}`), "/", "/privacy/", "/terms/"])].sort();
+      const versionHash = createHash("sha256");
+      for (const file of files) {
+        versionHash.update(file);
+        versionHash.update(readFileSync(join(outputDirectory, file)));
+      }
+      const version = `rfhm-${versionHash.digest("hex").slice(0, 12)}`;
+      writeFileSync(
+        join(outputDirectory, "sw.js"),
+        `const CACHE=${JSON.stringify(version)};const SHELL=${JSON.stringify(shell)};self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));self.addEventListener("fetch",event=>{if(event.request.method!=="GET"||new URL(event.request.url).origin!==location.origin)return;event.respondWith(caches.match(event.request).then(hit=>hit||fetch(event.request).then(response=>{if(response.ok){const clone=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,clone));}return response;}).catch(()=>event.request.mode==="navigate"?caches.match("/"):undefined)));});`,
+      );
     },
   };
+}
+
+function listOutputFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = join(directory, entry.name);
+    return entry.isDirectory()
+      ? listOutputFiles(file).map((child) => join(entry.name, child))
+      : [relative(directory, file)];
+  });
 }
 
 export default defineConfig({
