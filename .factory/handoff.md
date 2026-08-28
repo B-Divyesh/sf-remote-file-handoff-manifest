@@ -1,34 +1,41 @@
-# Handoff — adversarial review 3
+# Handoff — polish round 3
 
-## Result
+## Status
 
-Review-only work completed and committed. No product source was modified.
+The repair is ready for deployment. The final commit, clean-clone evidence, and cold live verification are added here immediately after the deployment check.
 
-The product **does not pass** this review. `.factory/review-3.md` records two remaining defects:
+## Repair included
 
-1. Reopened `F-2-3` / `F-3-1`: Back loses the workflow scroll position after a real browser click.
-2. `F-3-2`: the demo replay button also triggers clipboard-copy handling and ends labelled “Copy install command.”
+- Saves and restores the reader’s exact scroll position for real same-origin navigation, then focuses and announces the destination h1 without moving the viewport.
+- Limits clipboard behavior to the install command. The demo replay button now runs only the bundled sample and returns to “Replay sample check.”
+- Keeps the full earlier repair set: plain first-screen wording, isolated `?demo=1` / `/demo/` sample path, persistent banner/reset/exit controls, 11 claim tests, legal/404 routes, metadata, accessible mobile layout, local-only verifier, and the checksum-relay visual identity.
 
-## Verification performed
+## Local verification
 
-- Cold live mobile (390 × 844) and desktop (1440 × 900) first-read checks.
-- Live demo entry/reset/exit, real-storage marker isolation, same-origin request observation, live offline reload, and CLI demo from a temporary directory.
-- Every one of the 11 `.factory/claims.json` commands, separately, in clean clone `/tmp/rfhm-review3-ZjyuGq/repo`.
-- Clean-clone `npm test`, `npm run build`, `cargo fmt --check`, and `cargo clippy --all-targets -- -D warnings`.
-- Live metadata/route/404/link crawl and real-click Back/focus check.
+The repair source commit `6205b12` passed:
 
-## Reproduce
+```sh
+npm test
+npm run build
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo build --release
+cargo package --allow-dirty
+```
+
+`npm test` includes Rust unit/integration/doctest coverage, TypeScript checks, claim tests, browser route/metadata/mobile/Axe checks, privacy/request checks, service-worker offline checks, and the real-click Back/replay regressions. `cargo package --allow-dirty` creates the ready-to-publish crate; do not publish it from this repository.
+
+## Run and deploy
 
 ```sh
 npm ci
 npm test
 npm run build
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
+cargo run -- demo
 ```
 
-For the two failures, follow the exact reproductions and test changes in `.factory/review-3.md`.
+The factory deploys `dist/site`; deployment is triggered by the committed `main` branch work order. The user-facing demo is `https://remote-file-handoff-manifest.sociobot.in/?demo=1`, which redirects to `/demo/`.
 
 ## Known gaps
 
-The two findings above remain. Do not mark the product accepted until they are repaired and independently retested.
+None in the repaired source. Final live deployment evidence is pending the required cold check.

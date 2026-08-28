@@ -1,1 +1,1 @@
-Find missing, changed, and extra files in a folder handoff with a signed file list.
+Verify folder handoffs with signed file lists.
