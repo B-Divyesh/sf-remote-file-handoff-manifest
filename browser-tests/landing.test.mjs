@@ -139,5 +139,6 @@ test("deployment configuration has security headers, immutable assets, and a rea
   assert.match(config.globalHeaders["Strict-Transport-Security"], /max-age=31536000/);
   assert.equal(config.routes.find((entry) => entry.route === "/assets/*")?.headers?.["Cache-Control"], "public, max-age=31536000, immutable");
   assert.equal(config.routes.find((entry) => entry.route === "/sw.js")?.headers?.["Cache-Control"], "no-cache, no-store, must-revalidate");
-  assert.deepEqual(config.routes.at(-1), { route: "/*", rewrite: "/404.html", statusCode: 404 });
+  assert.deepEqual(config.routes.at(-1), { route: "/*", statusCode: 404 });
+  assert.deepEqual(config.responseOverrides["404"], { rewrite: "/404.html" });
 });

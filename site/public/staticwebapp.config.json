@@ -12,9 +12,12 @@
     { "route": "/sw.js", "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" } },
     { "route": "/robots.txt" },
     { "route": "/sitemap.xml" },
-    { "route": "/404", "rewrite": "/404.html", "statusCode": 404 },
-    { "route": "/*", "rewrite": "/404.html", "statusCode": 404 }
+    { "route": "/404", "statusCode": 404 },
+    { "route": "/*", "statusCode": 404 }
   ],
+  "responseOverrides": {
+    "404": { "rewrite": "/404.html" }
+  },
   "globalHeaders": {
     "Content-Security-Policy": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; form-action 'self'; frame-ancestors 'none'",
     "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
